@@ -83,6 +83,11 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Updated repo docs and manifest descriptions to reflect the DPT-focused behavior.
 - Set repo release version fields to `1.0.1`.
 
+### Release prep for 1.0.2
+- Rolled in the fix for the last-combat panel data source.
+- Rolled in the fix for `F9` so full stats reset clears lifetime totals too.
+- Set repo release version fields to `1.0.2`.
+
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.
 - Prefer short bullets describing user-visible or debug-relevant code changes.

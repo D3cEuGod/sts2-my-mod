@@ -112,32 +112,44 @@ internal static class DpsTracker
 
     internal static IReadOnlyList<PlayerSnapshot> GetSnapshots(int maxRows)
     {
+        if (_combatActive)
+            return BuildLiveSnapshots(maxRows);
+
         return _publishedCombatSnapshots.Take(maxRows).ToArray();
     }
 
     internal static string GetEncounterSummary()
     {
         if (_combatActive)
-            return "战斗进行中，面板会在本场结算后刷新。";
+        {
+            var liveSnapshots = BuildLiveSnapshots(int.MaxValue);
+            if (liveSnapshots.Count == 0)
+                return "战斗进行中，暂时还没有有效伤害。";
+
+            float liveTotalDamage = liveSnapshots.Sum(player => player.TotalDamage);
+            int activeDealers = liveSnapshots.Count(player => player.TotalDamage > 0f);
+            return $"战斗进行中 · {GetEncounterDurationSeconds():F1}s · 出伤 {activeDealers}/{liveSnapshots.Count} 人 · 总伤害 {liveTotalDamage:F0}";
+        }
 
         if (!_publishedCombatSeen)
             return _combatSeen
                 ? "本场已结束，但还没有可展示的结算数据。"
-                : "还没有已结算战斗，开打后会在战斗结束时刷新。";
+                : "还没有已结算战斗，开打后会自动开始统计。";
 
         float totalDamage = _publishedCombatSnapshots.Sum(player => player.TotalDamage);
-        int activeDealers = _publishedCombatSnapshots.Count(player => player.TotalDamage > 0f);
-        return $"本场结算 · {_publishedCombatDurationSeconds:F1}s · 出伤 {activeDealers}/{_publishedCombatSnapshots.Count} 人 · 总伤害 {totalDamage:F0}";
+        int finishedDealers = _publishedCombatSnapshots.Count(player => player.TotalDamage > 0f);
+        return $"本场结算 · {_publishedCombatDurationSeconds:F1}s · 出伤 {finishedDealers}/{_publishedCombatSnapshots.Count} 人 · 总伤害 {totalDamage:F0}";
     }
 
     internal static string GetLifetimeSummary()
     {
-        if (LifetimePlayers.Count == 0)
-            return _combatActive
-                ? "累计数据会在本场战斗结算后更新。"
-                : "本次启动后还没有累计到有效伤害。";
-
         float totalDamage = LifetimePlayers.Values.Sum(player => player.TotalDamage);
+        if (_combatActive)
+            totalDamage += Players.Values.Sum(player => player.TotalDamage);
+
+        if (totalDamage <= 0f)
+            return "本次启动后还没有累计到有效伤害。";
+
         return $"本次启动累计总伤害 {totalDamage:F0}";
     }
 

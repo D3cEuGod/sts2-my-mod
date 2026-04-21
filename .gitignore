@@ -1,0 +1,7 @@
+.DS_Store
+.godot/
+.idea/
+build/
+dist/
+*.csproj.old
+*.csproj.old.*

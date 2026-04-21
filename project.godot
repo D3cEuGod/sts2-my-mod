@@ -1,0 +1,7 @@
+config_version=5
+
+[application]
+config/name="Sts2DpsPrototype"
+
+[dotnet]
+project/assembly_name="Sts2DpsPrototype"

@@ -1,6 +1,6 @@
 # sts2-my-mod
 
-一个面向 Slay the Spire 2 的 DPS 原型模组仓库。
+一个面向 Slay the Spire 2 的 DPT 原型模组仓库。
 
 ## 当前状态
 
@@ -9,7 +9,7 @@
 
 当前重点有三件事：
 
-- 用已验证的 STS2 运行时 hook 保持 DPS 统计正确
+- 用已验证的 STS2 运行时 hook 保持 DPT 统计正确
 - 避免存档/进度修复逻辑再次破坏 modded 存档
 - 把右上角面板继续收成紧凑、可读、接近原生 UI 的样式
 
@@ -51,10 +51,11 @@
 
 ## 目前能做什么
 
-### DPS 统计
+### DPT 统计
 
 - 通过 Harmony patch `CombatHistory.DamageReceived(...)` 读取真实伤害事件
 - 按玩家聚合伤害，并把宠物/召唤物伤害归属到拥有者
+- 使用运行时 `CombatState.RoundNumber` 计算真正的 DPT（Damage Per Turn）
 - 在战斗开始时自动建立本场 roster
 - 在战斗结束后保留上一场结算
 - 同时维护：
@@ -65,6 +66,7 @@
 ### UI 面板
 
 - 在右上角显示一个紧凑统计面板
+- 面板支持拖动位置
 - 当前支持三段信息：
   - 当前战斗
   - 累计伤害

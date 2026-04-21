@@ -71,6 +71,16 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Set repo release version fields to `1.0.0`.
 - Added a repo `.gitignore` for local build/IDE artifacts.
 
+### Release prep for 1.0.1
+- Rolled the latest post-1.0.0 fixes and polish into a new release baseline.
+- Integrated the draggable overlay panel behavior into the release package.
+- Integrated the corrected combat-end handling so fights no longer settle early from a damage-gap timeout.
+- Kept current-combat damage accumulating live during a fight while preserving combat-boundary resets.
+- Switched the main displayed metric from DPS to true DPT using `CombatState.RoundNumber`.
+- Removed seconds-based UI timing text from the panel.
+- Updated repo docs and manifest descriptions to reflect the DPT-focused behavior.
+- Set repo release version fields to `1.0.1`.
+
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.
 - Prefer short bullets describing user-visible or debug-relevant code changes.

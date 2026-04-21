@@ -385,7 +385,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         header.AddChild(nameLabel);
 
         string rightText = showDps
-            ? (snapshot.TotalDamage > 0f ? $"{snapshot.Dps:F1} DPS" : "待命")
+            ? (snapshot.TotalDamage > 0f ? $"{snapshot.DamagePerTurn:F1} DPT" : "待命")
             : $"{snapshot.TotalDamage:F0}";
         var rightLabel = Passthrough(new Label { Text = rightText });
         rightLabel.AddThemeColorOverride("font_color", accent switch
@@ -401,9 +401,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
 
         if (!compact)
         {
-            string detailText = showRecentHit
-                ? $"总伤害 {snapshot.TotalDamage:F0} · 最近命中 {snapshot.SecondsSinceLastHit:F1}s 前"
-                : $"总伤害 {snapshot.TotalDamage:F0}";
+            string detailText = $"总伤害 {snapshot.TotalDamage:F0}";
             var detail = Passthrough(new Label
             {
                 Text = detailText,

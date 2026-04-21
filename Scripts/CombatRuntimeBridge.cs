@@ -21,6 +21,7 @@ internal sealed class CombatRuntimeBridge
             _combatManager = manager;
             _combatManager.CombatSetUp += OnCombatSetUp;
             _combatManager.CombatEnded += OnCombatEnded;
+            _combatManager.TurnStarted += OnTurnStarted;
         }
 
         SyncCurrentCombat(manager);
@@ -49,6 +50,7 @@ internal sealed class CombatRuntimeBridge
 
         _combatManager.CombatSetUp -= OnCombatSetUp;
         _combatManager.CombatEnded -= OnCombatEnded;
+        _combatManager.TurnStarted -= OnTurnStarted;
         _combatManager = null;
     }
 
@@ -61,6 +63,8 @@ internal sealed class CombatRuntimeBridge
         if (state == null)
             return;
 
+        DpsTracker.SetRoundNumber(state.RoundNumber);
+
         if (_currentRoster.Count > 0 && DpsTracker.HasRoster(_currentRoster))
             return;
 
@@ -71,11 +75,17 @@ internal sealed class CombatRuntimeBridge
     {
         _currentRoster = BuildCombatRoster(state);
         DpsTracker.BeginCombat(_currentRoster);
+        DpsTracker.SetRoundNumber(state.RoundNumber);
     }
 
     private void OnCombatEnded(MegaCrit.Sts2.Core.Rooms.CombatRoom room)
     {
         DpsTracker.EndCombat();
+    }
+
+    private void OnTurnStarted(CombatState state)
+    {
+        DpsTracker.SetRoundNumber(state.RoundNumber);
     }
 
     private IReadOnlyList<DpsTracker.PlayerSeed> BuildCombatRoster(CombatState state)

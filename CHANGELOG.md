@@ -61,6 +61,8 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Combat settlement now trusts the game's real `CombatEnded` event instead of a damage-gap timeout.
 - Added draggable panel behavior, so the overlay can be moved by dragging the title area.
 - Kept collapse/expand behavior intact while making the default spawn position resolve from the current viewport.
+- Switched the main per-player metric from DPS to true DPT using the runtime `CombatState.RoundNumber` value.
+- Removed on-panel timing details so the UI no longer shows seconds-based status text.
 - Rebuilt and redeployed the live DLL to the actual game mod directory.
 
 ### Release prep for 1.0.0

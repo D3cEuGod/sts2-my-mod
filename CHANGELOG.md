@@ -52,6 +52,12 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Slightly enlarged the collapse button to match the larger text treatment.
 - Rebuilt and redeployed the live DLL to the actual game mod directory.
 
+### Post-release stats refresh fix
+- Changed DPS panel publishing behavior back to combat-end refresh instead of live per-turn updates.
+- Current combat data is now committed only when a fight ends, so the panel no longer rolls forward hit by hit during battle.
+- Lifetime totals also advance on combat settlement instead of changing continuously mid-fight.
+- Rebuilt and redeployed the live DLL to the actual game mod directory.
+
 ### Release prep for 1.0.0
 - Updated README and install docs to describe the current recommended DLL-only cross-platform release path.
 - Switched the packaging script to produce a DLL-only cross-platform zip instead of bundling an untrusted `.pck`.

@@ -13,9 +13,15 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private Label _lastCombatLabel = null!;
     private Label _footerLabel = null!;
     private PanelContainer _panel = null!;
+    private Control _dragHandle = null!;
     private Button _collapseButton = null!;
     private double _refreshCooldown;
     private bool _collapsed;
+    private bool _dragging;
+    private Vector2 _dragPointerOffset;
+    private float _panelWidth = 300f;
+    private float _expandedPanelHeight = 276f;
+    private float _collapsedPanelHeight = 40f;
 
     private static T Passthrough<T>(T control) where T : Control
     {
@@ -30,6 +36,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         Name = "DpsOverlay";
         ProcessMode = ProcessModeEnum.Always;
         BuildUi();
+        SetDefaultTopRightPosition();
         ApplyCollapsedState();
         Refresh();
         MainFile.Log.Info("DpsOverlay ready.");
@@ -61,14 +68,14 @@ internal sealed partial class DpsOverlay : CanvasLayer
 
         _panel = new PanelContainer();
         _panel.Name = "DpsPanel";
-        _panel.AnchorLeft = 1f;
+        _panel.AnchorLeft = 0f;
         _panel.AnchorTop = 0f;
-        _panel.AnchorRight = 1f;
+        _panel.AnchorRight = 0f;
         _panel.AnchorBottom = 0f;
-        _panel.OffsetLeft = -316f;
+        _panel.OffsetLeft = 0f;
         _panel.OffsetTop = 16f;
-        _panel.OffsetRight = -16f;
-        _panel.OffsetBottom = 292f;
+        _panel.OffsetRight = _panel.OffsetLeft + _panelWidth;
+        _panel.OffsetBottom = _panel.OffsetTop + _expandedPanelHeight;
         _panel.MouseFilter = Control.MouseFilterEnum.Pass;
         _panel.Modulate = new Color(1f, 1f, 1f, PrototypeSettings.PanelOpacity);
         root.AddChild(_panel);
@@ -104,6 +111,15 @@ internal sealed partial class DpsOverlay : CanvasLayer
         headerWrap.MouseFilter = Control.MouseFilterEnum.Pass;
         shell.AddChild(headerWrap);
 
+        _dragHandle = new Control();
+        _dragHandle.Name = "DragHandle";
+        _dragHandle.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _dragHandle.CustomMinimumSize = new Vector2(0f, 22f);
+        _dragHandle.MouseFilter = Control.MouseFilterEnum.Stop;
+        _dragHandle.MouseDefaultCursorShape = Control.CursorShape.Move;
+        _dragHandle.GuiInput += OnDragHandleGuiInput;
+        headerWrap.AddChild(_dragHandle);
+
         var titleBadge = new PanelContainer();
         titleBadge.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         titleBadge.MouseFilter = Control.MouseFilterEnum.Ignore;
@@ -121,7 +137,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             CornerRadiusBottomLeft = 3,
             CornerRadiusBottomRight = 3,
         });
-        headerWrap.AddChild(titleBadge);
+        _dragHandle.AddChild(titleBadge);
 
         var title = new Label
         {
@@ -191,6 +207,57 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _body.AddChild(_footerLabel);
     }
 
+    private void OnDragHandleGuiInput(InputEvent @event)
+    {
+        if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
+        {
+            if (mouseButton.Pressed)
+            {
+                _dragging = true;
+                _dragPointerOffset = mouseButton.GlobalPosition - new Vector2(_panel.OffsetLeft, _panel.OffsetTop);
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+
+            _dragging = false;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (@event is InputEventMouseMotion mouseMotion && _dragging)
+        {
+            SetPanelTopLeft(mouseMotion.GlobalPosition - _dragPointerOffset);
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    private void SetPanelTopLeft(Vector2 topLeft)
+    {
+        Rect2 visibleRect = GetViewport().GetVisibleRect();
+        float width = _panelWidth;
+        float height = _collapsed ? _collapsedPanelHeight : _expandedPanelHeight;
+
+        float minX = visibleRect.Position.X;
+        float minY = visibleRect.Position.Y;
+        float maxX = visibleRect.End.X - width;
+        float maxY = visibleRect.End.Y - height;
+
+        float clampedX = Mathf.Clamp(topLeft.X, minX, Math.Max(minX, maxX));
+        float clampedY = Mathf.Clamp(topLeft.Y, minY, Math.Max(minY, maxY));
+
+        _panel.OffsetLeft = clampedX;
+        _panel.OffsetTop = clampedY;
+        _panel.OffsetRight = clampedX + width;
+        _panel.OffsetBottom = clampedY + height;
+    }
+
+    private void SetDefaultTopRightPosition()
+    {
+        Rect2 visibleRect = GetViewport().GetVisibleRect();
+        float defaultX = visibleRect.End.X - _panelWidth - 16f;
+        SetPanelTopLeft(new Vector2(defaultX, 16f));
+    }
+
     private void ToggleCollapsed()
     {
         _collapsed = !_collapsed;
@@ -202,7 +269,8 @@ internal sealed partial class DpsOverlay : CanvasLayer
     {
         _collapseButton.Text = _collapsed ? "▸" : "▾";
         _body.Visible = !_collapsed;
-        _panel.OffsetBottom = _collapsed ? 40f : 292f;
+        float panelHeight = _collapsed ? _collapsedPanelHeight : _expandedPanelHeight;
+        _panel.OffsetBottom = _panel.OffsetTop + panelHeight;
     }
 
     private static Control BuildDivider()

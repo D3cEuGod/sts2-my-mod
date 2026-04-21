@@ -59,6 +59,8 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Last-combat summary still updates on combat settlement.
 - Removed the fallback "no damage for 8 seconds means combat ended" heuristic after it refreshed too early in real fights.
 - Combat settlement now trusts the game's real `CombatEnded` event instead of a damage-gap timeout.
+- Added draggable panel behavior, so the overlay can be moved by dragging the title area.
+- Kept collapse/expand behavior intact while making the default spawn position resolve from the current viewport.
 - Rebuilt and redeployed the live DLL to the actual game mod directory.
 
 ### Release prep for 1.0.0

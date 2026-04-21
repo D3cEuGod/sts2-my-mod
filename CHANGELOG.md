@@ -79,6 +79,7 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Switched the main displayed metric from DPS to true DPT using `CombatState.RoundNumber`.
 - Removed seconds-based UI timing text from the panel.
 - Fixed the last-combat panel so a newly started fight can correctly show the immediately previous completed combat.
+- Fixed `F9` reset so it clears lifetime damage totals as well as current/last-combat display state.
 - Updated repo docs and manifest descriptions to reflect the DPT-focused behavior.
 - Set repo release version fields to `1.0.1`.
 

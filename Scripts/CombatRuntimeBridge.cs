@@ -34,13 +34,10 @@ internal sealed class CombatRuntimeBridge
 
     internal void ResetTrackedCombat()
     {
-        if (_currentRoster.Count > 0)
-        {
-            DpsTracker.BeginCombat(_currentRoster);
-            return;
-        }
-
         DpsTracker.Reset();
+
+        if (_combatManager?.IsInProgress == true && _currentRoster.Count > 0)
+            DpsTracker.BeginCombat(_currentRoster);
     }
 
     private void UnsubscribeManager()

@@ -57,6 +57,8 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Current combat now shows continuously accumulating damage during a fight, but still resets only on combat boundaries instead of per-turn.
 - Lifetime totals stay visible and include ongoing combat damage while a fight is in progress.
 - Last-combat summary still updates on combat settlement.
+- Removed the fallback "no damage for 8 seconds means combat ended" heuristic after it refreshed too early in real fights.
+- Combat settlement now trusts the game's real `CombatEnded` event instead of a damage-gap timeout.
 - Rebuilt and redeployed the live DLL to the actual game mod directory.
 
 ### Release prep for 1.0.0

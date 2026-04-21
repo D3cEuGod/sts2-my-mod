@@ -2,8 +2,6 @@ namespace Sts2DpsPrototype;
 
 internal static class DpsTracker
 {
-    private const double EncounterTimeoutSeconds = 8.0;
-
     private static readonly Dictionary<string, PlayerDamageState> Players = new();
     private static readonly Dictionary<string, LifetimeDamageState> LifetimePlayers = new();
     private static IReadOnlyList<PlayerSnapshot> _publishedCombatSnapshots = Array.Empty<PlayerSnapshot>();
@@ -20,9 +18,6 @@ internal static class DpsTracker
     internal static void Tick(double delta)
     {
         _clockSeconds += delta;
-
-        if (_combatActive && _clockSeconds - _lastDamageSeconds >= EncounterTimeoutSeconds)
-            EndCombat();
     }
 
     internal static void BeginCombat(IEnumerable<PlayerSeed>? roster = null)

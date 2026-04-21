@@ -147,11 +147,12 @@ internal static class DpsTracker
 
     internal static string GetLastCombatSummary()
     {
-        if (!_previousCombatSeen || _previousCombatSnapshots.Count == 0)
+        var snapshots = GetVisibleLastCombatSnapshots();
+        if (snapshots.Count == 0)
             return "还没有上一场可展示的结算。";
 
-        float totalDamage = _previousCombatSnapshots.Sum(snapshot => snapshot.TotalDamage);
-        return $"上一场总伤害 {totalDamage:F0} · 出伤 {_previousCombatSnapshots.Count} 人";
+        float totalDamage = snapshots.Sum(snapshot => snapshot.TotalDamage);
+        return $"上一场总伤害 {totalDamage:F0} · 出伤 {snapshots.Count} 人";
     }
 
     internal static IReadOnlyList<PlayerSnapshot> GetLifetimeSnapshots(int maxRows)
@@ -174,7 +175,7 @@ internal static class DpsTracker
 
     internal static IReadOnlyList<PlayerSnapshot> GetLastCombatSnapshots(int maxRows)
     {
-        return _previousCombatSnapshots.Take(maxRows).ToArray();
+        return GetVisibleLastCombatSnapshots().Take(maxRows).ToArray();
     }
 
     internal static void Reset()
@@ -209,6 +210,17 @@ internal static class DpsTracker
             .ThenBy(snapshot => snapshot.SortOrder)
             .Take(maxRows)
             .ToArray();
+    }
+
+    private static IReadOnlyList<PlayerSnapshot> GetVisibleLastCombatSnapshots()
+    {
+        if (_combatActive)
+            return _publishedCombatSnapshots;
+
+        if (_previousCombatSeen && _previousCombatSnapshots.Count > 0)
+            return _previousCombatSnapshots;
+
+        return Array.Empty<PlayerSnapshot>();
     }
 
     private static int GetEffectiveRoundCount()

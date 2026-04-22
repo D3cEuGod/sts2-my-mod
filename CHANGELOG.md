@@ -88,6 +88,12 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Rolled in the fix for `F9` so full stats reset clears lifetime totals too.
 - Set repo release version fields to `1.0.2`.
 
+### Follow-up investigation notes
+- Added backlog items for vulnerable/weak damage-contribution tracking and non-attack damage classification.
+- Confirmed by local reflection that `WeakPower` and `VulnerablePower` both expose `ModifyDamageMultiplicative(...)` hooks.
+- Confirmed several likely non-attack damage paths worth future classification, including `ThornsPower`, `ReflectPower`, `OstyCmd`, and HP-loss related hooks.
+- Added a log-validation build that now logs final damage events plus weak/vulnerable/thorns/reflect/osty-related debug signals during combat.
+
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.
 - Prefer short bullets describing user-visible or debug-relevant code changes.

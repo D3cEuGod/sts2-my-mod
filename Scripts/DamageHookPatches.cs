@@ -37,6 +37,11 @@ internal static class DamageHookPatches
 
         string playerId = owner.NetId.ToString();
         string playerName = CombatRuntimeBridge.ResolveDisplayName(combatState, owner);
+        string targetName = receiver?.Name ?? receiver?.GetType().Name ?? "<null>";
+        string dealerName = dealer?.Name ?? dealer?.GetType().Name ?? "<null>";
+        string cardName = cardSource?.GetType().Name ?? "<null>";
+        string petOwner = dealer?.PetOwner?.NetId.ToString() ?? "<none>";
+        MainFile.Log.Info($"[DAMAGE_FINAL] owner={playerName} target={targetName} dealer={dealerName} card={cardName} total={result.TotalDamage} unblocked={result.UnblockedDamage} blocked={result.BlockedDamage} overkill={result.OverkillDamage} tracked={damage} petOwner={petOwner}");
         DpsTracker.RecordDamage(playerId, playerName, damage);
     }
 

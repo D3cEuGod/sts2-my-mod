@@ -14,6 +14,7 @@ public partial class MainFile : Godot.Node
     {
         PrototypeSettings.Load();
         DamageHookPatches.EnsurePatched();
+        DamageDebugPatches.EnsurePatched();
         PrototypeController.EnsureBootstrapped();
 
         Log.Info($"DPS Prototype v{Version} initialized.");

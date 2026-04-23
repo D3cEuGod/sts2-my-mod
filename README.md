@@ -2,6 +2,33 @@
 
 一个面向 Slay the Spire 2 的 DPT 原型模组仓库。
 
+## Latest 安装说明
+
+当前最新发布版本：`1.1.1`
+
+如果你只是想安装最新版本，不需要自己构建源码，直接：
+
+1. 在 GitHub Releases 下载最新的 `Sts2DpsPrototype-1.1.1-multiplatform-dll-only.zip`
+2. 解压后把整个 `Sts2DpsPrototype/` 文件夹复制到游戏的 `mods/` 目录
+3. 启动游戏，进入战斗后确认右上角出现面板
+
+最终目录结构应类似：
+
+```text
+mods/
+  Sts2DpsPrototype/
+    Sts2DpsPrototype.dll
+    Sts2DpsPrototype.json
+    README-install.md
+```
+
+补充说明：
+
+- 当前公开 release 采用 **DLL-only** 路线
+- 不要同时启用第二份 manifest
+- 当前作者本机已验证的 macOS 路径是 `SlayTheSpire2.app/Contents/MacOS/mods/`
+- 更详细的安装说明见 `README-install.md`
+
 ## 当前状态
 
 这个仓库已经不只是最小 starter prototype。

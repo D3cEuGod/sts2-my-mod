@@ -22,6 +22,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private float _panelWidth = 300f;
     private float _expandedPanelHeight = 276f;
     private float _collapsedPanelHeight = 40f;
+    private int _lastAppliedMaxRows = -1;
 
     private static T Passthrough<T>(T control) where T : Control
     {
@@ -48,6 +49,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         if (!Visible)
             return;
 
+        ApplyDynamicLayout();
         _panel.Visible = true;
         _panel.Modulate = new Color(1f, 1f, 1f, PrototypeSettings.PanelOpacity);
 
@@ -273,6 +275,17 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _panel.OffsetBottom = _panel.OffsetTop + panelHeight;
     }
 
+    private void ApplyDynamicLayout()
+    {
+        if (_lastAppliedMaxRows == PrototypeSettings.MaxRows)
+            return;
+
+        _lastAppliedMaxRows = PrototypeSettings.MaxRows;
+        _expandedPanelHeight = 276f + Math.Max(0, PrototypeSettings.MaxRows - 2) * 24f;
+        ApplyCollapsedState();
+        SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
+    }
+
     private static Control BuildDivider()
     {
         return Passthrough(new ColorRect
@@ -325,9 +338,12 @@ internal sealed partial class DpsOverlay : CanvasLayer
         if (_collapsed)
             return;
 
-        RebuildRows(_currentRows, DpsTracker.GetSnapshots(2), showDps: true, emptyText: "本场还没有有效伤害。", showRecentHit: true, accent: RowAccent.Primary, compact: false);
-        RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(1), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
-        RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(1), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
+        int currentRows = Math.Max(2, PrototypeSettings.MaxRows);
+        int compactRows = Math.Max(1, Math.Min(2, PrototypeSettings.MaxRows - 1));
+
+        RebuildRows(_currentRows, DpsTracker.GetSnapshots(currentRows), showDps: true, emptyText: "本场还没有有效伤害。", showRecentHit: true, accent: RowAccent.Primary, compact: false);
+        RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(compactRows), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
+        RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(compactRows), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
     }
 
     private static void RebuildRows(VBoxContainer container, IReadOnlyList<DpsTracker.PlayerSnapshot> snapshots, bool showDps, string emptyText, bool showRecentHit, RowAccent accent, bool compact)

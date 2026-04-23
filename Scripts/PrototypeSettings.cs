@@ -9,7 +9,7 @@ internal static class PrototypeSettings
 
     internal static void Load()
     {
-        ShowPanel = true;
+        ShowPanel = ModConfigBridge.GetValue("showPanel", true);
         PanelOpacity = Math.Clamp(ModConfigBridge.GetValue("panelOpacity", 0.78f), 0.35f, 0.95f);
         MaxRows = Math.Clamp(ModConfigBridge.GetValue("maxRows", 5), 3, 8);
         EnableDemoHotkeys = ModConfigBridge.GetValue("enableDemoHotkeys", true);

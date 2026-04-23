@@ -142,6 +142,11 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Updated release docs to reflect the `1.1.1` DLL-only package name and current install expectations.
 - Kept the recommended public release shape as DLL-only, because the repo's last verified stable runtime path still avoids shipping an exported `.pck`.
 
+### Overlay polish and stats accuracy follow-up
+- Fixed the panel visibility setting so `showPanel` now actually reloads from ModConfig instead of always forcing the overlay visible.
+- Made the overlay respond to the configured visible-row count and grow its panel height with that setting instead of silently ignoring it.
+- Tightened lifetime / last-combat rows and summaries so they show real damage dealers only, avoiding misleading zero-damage roster entries in those views.
+
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.
 - Prefer short bullets describing user-visible or debug-relevant code changes.

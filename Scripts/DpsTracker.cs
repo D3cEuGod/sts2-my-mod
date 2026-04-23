@@ -129,7 +129,8 @@ internal static class DpsTracker
             return "还没有上一场可展示的结算。";
 
         float totalDamage = snapshots.Sum(snapshot => snapshot.TotalDamage);
-        return $"上一场总伤害 {totalDamage:F0} · 出伤 {snapshots.Count} 人";
+        int activeDealers = snapshots.Count(snapshot => snapshot.TotalDamage > 0f);
+        return $"上一场总伤害 {totalDamage:F0} · 出伤 {activeDealers} 人";
     }
 
     internal static IReadOnlyList<PlayerSnapshot> GetLifetimeSnapshots(int maxRows)
@@ -160,6 +161,7 @@ internal static class DpsTracker
             return Array.Empty<PlayerSnapshot>();
 
         return combined.Values
+            .Where(state => state.TotalDamage > 0f)
             .Select(state => new PlayerSnapshot(
                 state.PlayerId,
                 state.DisplayName,
@@ -174,7 +176,10 @@ internal static class DpsTracker
 
     internal static IReadOnlyList<PlayerSnapshot> GetLastCombatSnapshots(int maxRows)
     {
-        return GetVisibleLastCombatSnapshots().Take(maxRows).ToArray();
+        return GetVisibleLastCombatSnapshots()
+            .Where(snapshot => snapshot.TotalDamage > 0f)
+            .Take(maxRows)
+            .ToArray();
     }
 
     internal static void Reset()

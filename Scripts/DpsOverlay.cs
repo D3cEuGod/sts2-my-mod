@@ -591,13 +591,30 @@ internal sealed partial class DpsOverlay : CanvasLayer
         summary.AddThemeFontSizeOverride("font_size", 10);
         body.AddChild(summary);
 
+        var champion = record.Snapshots
+            .Where(snapshot => snapshot.TotalDamage > 0f)
+            .OrderByDescending(snapshot => snapshot.TotalDamage)
+            .ThenBy(snapshot => snapshot.SortOrder)
+            .FirstOrDefault();
+        if (champion != null)
+        {
+            var championLabel = Passthrough(new Label
+            {
+                Text = $"🏆 冠军 {champion.DisplayName} · {champion.TotalDamage:F0} · 最高单次 {champion.HighestSingleHit:F0}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            });
+            championLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.8f, 0.52f));
+            championLabel.AddThemeFontSizeOverride("font_size", 11);
+            body.AddChild(championLabel);
+        }
+
         int visiblePlayers = expanded ? Math.Max(3, PrototypeSettings.MaxRows + 1) : 3;
         var snapshots = record.Snapshots.Where(snapshot => snapshot.TotalDamage > 0f).Take(visiblePlayers).ToArray();
         foreach (var snapshot in snapshots)
         {
             var row = Passthrough(new Label
             {
-                Text = $"• {snapshot.DisplayName}  {snapshot.TotalDamage:F0}  /  {snapshot.DamagePerTurn:F1} DPT  /  最高 {snapshot.HighestSingleHit:F0}",
+                Text = $"• {snapshot.DisplayName}  {snapshot.TotalDamage:F0}  /  {snapshot.DamagePerTurn:F1} DPT  /  最高 {snapshot.HighestSingleHit:F0}" + (champion != null && snapshot.PlayerId == champion.PlayerId ? "  👑" : string.Empty),
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             row.AddThemeColorOverride("font_color", new Color(0.69f, 0.74f, 0.8f));

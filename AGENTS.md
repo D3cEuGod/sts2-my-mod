@@ -125,3 +125,15 @@ This is the repo-level memo that should be checked on every future update to thi
 ### Maintenance rule for successful fixes/features
 - When a bug is successfully fixed, or a feature is successfully completed, add a short repo memo describing what actually fixed it and what paths must not be disturbed.
 - Prefer writing that maintenance knowledge here in `AGENTS.md`, plus `CHANGELOG.md` and `notes/decisions.md` when the change affects repo behavior or future debugging decisions.
+
+### UI sizing / empty-space memo
+- For the main HUD, large empty lower space was not caused by mysterious Godot layout behavior; it came from our own panel-height formula being too generous.
+- Two concrete causes already observed in this repo:
+  1. the fixed base height in the formula was too large
+  2. empty summary sections were still being counted as if they had one visible row
+- Current preferred fix path for main-panel empty space:
+  - size from rows actually rendered in the three main sections
+  - keep only the current-combat section's empty placeholder as a minimum row unit
+  - do not force lifetime / last-combat empty states to count as visible rows
+- Avoid jumping straight back to broad content-measurement auto-sizing. That earlier experiment made the panel grow too large in practice.
+- When debugging future HUD spacing issues, inspect the explicit height formula first before blaming container/layout behavior.

@@ -153,7 +153,14 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Highlighted the top-damage champion for each historical combat card so standout runs are easier to scan at a glance.
 - Brought the current-combat panel into the same visual language with champion highlighting plus highest-single-hit detail.
 - Increased overall panel sizing and font sizing slightly for readability in the live UI.
-- Replaced the earlier content-driven expanded-height experiment with a fixed main-panel height tuned for the three primary sections, after live testing showed the fully dynamic height could grow too large.
+- Replaced the earlier broad content-driven expanded-height experiment with a narrower rows-driven main-panel height rule, so the main HUD follows actual rendered rows instead of either growing from all content or reserving too much fixed empty space.
+
+### Release prep for 1.1.2
+- Rolled in the recent overlay/UI fixes and combat-history improvements into version `1.1.2`.
+- Centered the title badge correctly by making the title container fill the real header area instead of only centering text inside a narrower region.
+- Tightened main-panel height behavior so the main HUD sizes from rows actually rendered, avoiding both giant dynamic-height growth and large fixed empty space.
+- Preserved the combat-history enhancements from this pass: champion highlighting, highest single hit display, expandable fight cards, and paged history browsing.
+- Updated repo version fields to `1.1.2` and prepared a new DLL-only release package.
 
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.

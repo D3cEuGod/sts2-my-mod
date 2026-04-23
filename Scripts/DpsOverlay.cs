@@ -138,6 +138,11 @@ internal sealed partial class DpsOverlay : CanvasLayer
         var titleBadge = new PanelContainer();
         titleBadge.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         titleBadge.MouseFilter = Control.MouseFilterEnum.Ignore;
+        titleBadge.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        titleBadge.OffsetLeft = 0f;
+        titleBadge.OffsetTop = 0f;
+        titleBadge.OffsetRight = 0f;
+        titleBadge.OffsetBottom = 0f;
         titleBadge.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
             BgColor = new Color(0.2f, 0.17f, 0.1f, 0.42f),
@@ -158,6 +163,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         {
             Text = "伤害统计",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         title.AddThemeColorOverride("font_color", new Color(0.91f, 0.79f, 0.52f));
@@ -305,7 +311,19 @@ internal sealed partial class DpsOverlay : CanvasLayer
             return;
 
         _lastAppliedMaxRows = PrototypeSettings.MaxRows;
-        _expandedPanelHeight = 390f + Math.Max(0, PrototypeSettings.MaxRows - 3) * 24f;
+        ApplyCollapsedState();
+        SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
+    }
+
+    private void AdjustMainPanelHeightFromCurrentRows(int currentRowCount, int lifetimeRowCount, int lastCombatRowCount, bool hasCurrentChampion)
+    {
+        float championHeight = hasCurrentChampion ? 22f : 0f;
+        float targetHeight = 212f
+            + championHeight
+            + currentRowCount * 34f
+            + lifetimeRowCount * 24f
+            + lastCombatRowCount * 24f;
+        _expandedPanelHeight = Mathf.Clamp(targetHeight, 250f, 460f);
         ApplyCollapsedState();
         SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
     }
@@ -687,10 +705,23 @@ internal sealed partial class DpsOverlay : CanvasLayer
         int currentRows = Math.Max(2, PrototypeSettings.MaxRows);
         int compactRows = Math.Max(1, Math.Min(2, PrototypeSettings.MaxRows - 1));
 
-        RebuildRows(_currentRows, DpsTracker.GetSnapshots(currentRows), showDps: true, emptyText: "本场还没有有效伤害。", showRecentHit: true, accent: RowAccent.Primary, compact: false);
-        RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(compactRows), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
-        RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(compactRows), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
+        var currentSnapshots = DpsTracker.GetSnapshots(currentRows);
+        var lifetimeSnapshots = DpsTracker.GetLifetimeSnapshots(compactRows);
+        var lastCombatSnapshots = DpsTracker.GetLastCombatSnapshots(compactRows);
+
+        RebuildRows(_currentRows, currentSnapshots, showDps: true, emptyText: "本场还没有有效伤害。", showRecentHit: true, accent: RowAccent.Primary, compact: false);
+        RebuildRows(_lifetimeRows, lifetimeSnapshots, showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
+        RebuildRows(_lastCombatRows, lastCombatSnapshots, showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
         RefreshHistoryView();
+
+        if (!_showCombatHistory)
+        {
+            AdjustMainPanelHeightFromCurrentRows(
+                currentSnapshots.Count == 0 ? 1 : currentSnapshots.Count,
+                lifetimeSnapshots.Count,
+                lastCombatSnapshots.Count,
+                hasChampion);
+        }
     }
 
     private static void RebuildRows(VBoxContainer container, IReadOnlyList<DpsTracker.PlayerSnapshot> snapshots, bool showDps, string emptyText, bool showRecentHit, RowAccent accent, bool compact)

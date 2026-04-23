@@ -5,18 +5,24 @@ namespace Sts2DpsPrototype;
 internal sealed partial class DpsOverlay : CanvasLayer
 {
     private VBoxContainer _body = null!;
+    private VBoxContainer _mainSections = null!;
+    private VBoxContainer _historyView = null!;
     private VBoxContainer _currentRows = null!;
     private VBoxContainer _lifetimeRows = null!;
     private VBoxContainer _lastCombatRows = null!;
+    private VBoxContainer _historyRows = null!;
     private Label _summaryLabel = null!;
     private Label _lifetimeLabel = null!;
     private Label _lastCombatLabel = null!;
+    private Label _historySummaryLabel = null!;
     private Label _footerLabel = null!;
+    private Button _historyOpenButton = null!;
     private PanelContainer _panel = null!;
     private Control _dragHandle = null!;
     private Button _collapseButton = null!;
     private double _refreshCooldown;
     private bool _collapsed;
+    private bool _showCombatHistory;
     private bool _dragging;
     private Vector2 _dragPointerOffset;
     private float _panelWidth = 300f;
@@ -179,25 +185,30 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _body.MouseFilter = Control.MouseFilterEnum.Ignore;
         shell.AddChild(_body);
 
-        _body.AddChild(BuildSectionTitle("当前战斗"));
+        _mainSections = new VBoxContainer();
+        _mainSections.AddThemeConstantOverride("separation", 3);
+        _mainSections.MouseFilter = Control.MouseFilterEnum.Ignore;
+        _body.AddChild(_mainSections);
+
+        _mainSections.AddChild(BuildSectionTitle("当前战斗"));
         _summaryLabel = BuildSectionLabel();
-        _body.AddChild(_summaryLabel);
+        _mainSections.AddChild(_summaryLabel);
         _currentRows = BuildRowsContainer();
-        _body.AddChild(_currentRows);
+        _mainSections.AddChild(_currentRows);
 
-        _body.AddChild(BuildDivider());
-        _body.AddChild(BuildSectionTitle("本局累计"));
+        _mainSections.AddChild(BuildDivider());
+        _mainSections.AddChild(BuildSectionTitle("本局累计"));
         _lifetimeLabel = BuildSectionLabel();
-        _body.AddChild(_lifetimeLabel);
+        _mainSections.AddChild(_lifetimeLabel);
         _lifetimeRows = BuildRowsContainer();
-        _body.AddChild(_lifetimeRows);
+        _mainSections.AddChild(_lifetimeRows);
 
-        _body.AddChild(BuildDivider());
-        _body.AddChild(BuildSectionTitle("上一场结算"));
+        _mainSections.AddChild(BuildDivider());
+        _mainSections.AddChild(BuildHistorySectionHeader());
         _lastCombatLabel = BuildSectionLabel();
-        _body.AddChild(_lastCombatLabel);
+        _mainSections.AddChild(_lastCombatLabel);
         _lastCombatRows = BuildRowsContainer();
-        _body.AddChild(_lastCombatRows);
+        _mainSections.AddChild(_lastCombatRows);
 
         _footerLabel = Passthrough(new Label
         {
@@ -206,7 +217,11 @@ internal sealed partial class DpsOverlay : CanvasLayer
         });
         _footerLabel.AddThemeColorOverride("font_color", new Color(0.45f, 0.49f, 0.56f));
         _footerLabel.AddThemeFontSizeOverride("font_size", 10);
-        _body.AddChild(_footerLabel);
+        _mainSections.AddChild(_footerLabel);
+
+        _historyView = BuildHistoryView();
+        _historyView.Visible = false;
+        _body.AddChild(_historyView);
     }
 
     private void OnDragHandleGuiInput(InputEvent @event)
@@ -325,6 +340,161 @@ internal sealed partial class DpsOverlay : CanvasLayer
         return box;
     }
 
+    private Control BuildHistorySectionHeader()
+    {
+        var row = Passthrough(new HBoxContainer());
+        row.AddThemeConstantOverride("separation", 4);
+
+        _historyOpenButton = new Button
+        {
+            Text = "上一场结算 ▸",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            TooltipText = "查看本局更早战斗记录",
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+        };
+        _historyOpenButton.AddThemeFontSizeOverride("font_size", 12);
+        _historyOpenButton.AddThemeColorOverride("font_color", new Color(0.75f, 0.78f, 0.82f));
+        _historyOpenButton.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
+        _historyOpenButton.AddThemeStyleboxOverride("hover", new StyleBoxEmpty());
+        _historyOpenButton.AddThemeStyleboxOverride("pressed", new StyleBoxEmpty());
+        _historyOpenButton.Pressed += OpenCombatHistory;
+        row.AddChild(_historyOpenButton);
+
+        var hint = Passthrough(new Label { Text = "查看本局内更早战斗" });
+        hint.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
+        hint.AddThemeFontSizeOverride("font_size", 10);
+        row.AddChild(hint);
+        row.AddChild(Passthrough(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }));
+
+        return row;
+    }
+
+    private VBoxContainer BuildHistoryView()
+    {
+        var view = new VBoxContainer();
+        view.AddThemeConstantOverride("separation", 4);
+        view.MouseFilter = Control.MouseFilterEnum.Ignore;
+
+        var topRow = Passthrough(new HBoxContainer());
+        topRow.AddThemeConstantOverride("separation", 4);
+        view.AddChild(topRow);
+
+        var backButton = new Button
+        {
+            Text = "‹ 返回",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            TooltipText = "返回主面板",
+        };
+        backButton.AddThemeFontSizeOverride("font_size", 11);
+        backButton.Pressed += CloseCombatHistory;
+        topRow.AddChild(backButton);
+
+        var title = Passthrough(new Label { Text = "本局战斗记录", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        title.AddThemeColorOverride("font_color", new Color(0.91f, 0.79f, 0.52f));
+        title.AddThemeFontSizeOverride("font_size", 13);
+        topRow.AddChild(title);
+
+        _historySummaryLabel = BuildSectionLabel();
+        view.AddChild(_historySummaryLabel);
+
+        var scroll = new ScrollContainer();
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        scroll.CustomMinimumSize = new Vector2(0f, 190f);
+        scroll.MouseFilter = Control.MouseFilterEnum.Pass;
+        view.AddChild(scroll);
+
+        _historyRows = new VBoxContainer();
+        _historyRows.AddThemeConstantOverride("separation", 5);
+        _historyRows.MouseFilter = Control.MouseFilterEnum.Ignore;
+        scroll.AddChild(_historyRows);
+
+        return view;
+    }
+
+    private void OpenCombatHistory()
+    {
+        _showCombatHistory = true;
+        Refresh();
+    }
+
+    private void CloseCombatHistory()
+    {
+        _showCombatHistory = false;
+        Refresh();
+    }
+
+    private void RefreshHistoryView()
+    {
+        _historySummaryLabel.Text = DpsTracker.GetCombatHistorySummary();
+
+        foreach (Node child in _historyRows.GetChildren())
+            child.QueueFree();
+
+        var records = DpsTracker.GetHistoricalCombatRecords();
+        if (records.Count == 0)
+        {
+            _historyRows.AddChild(BuildEmptyLabel("还没有可查看的更早战斗记录。"));
+            return;
+        }
+
+        foreach (var record in records)
+            _historyRows.AddChild(BuildHistoryRecord(record));
+    }
+
+    private static Control BuildHistoryRecord(DpsTracker.CombatRecord record)
+    {
+        var card = Passthrough(new VBoxContainer());
+        card.AddThemeConstantOverride("separation", 2);
+
+        var header = Passthrough(new HBoxContainer());
+        header.AddThemeConstantOverride("separation", 4);
+
+        var title = Passthrough(new Label
+        {
+            Text = $"第 {record.CombatIndex} 场",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        });
+        title.AddThemeColorOverride("font_color", new Color(0.87f, 0.86f, 0.82f));
+        title.AddThemeFontSizeOverride("font_size", 12);
+        header.AddChild(title);
+
+        var total = Passthrough(new Label
+        {
+            Text = $"{record.TotalDamage:F0}",
+        });
+        total.AddThemeColorOverride("font_color", new Color(0.66f, 0.73f, 0.8f));
+        total.AddThemeFontSizeOverride("font_size", 12);
+        header.AddChild(total);
+
+        card.AddChild(header);
+
+        var summary = Passthrough(new Label
+        {
+            Text = $"{record.RoundCount} 回合 · 出伤 {record.ActiveDealers} 人",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        });
+        summary.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
+        summary.AddThemeFontSizeOverride("font_size", 10);
+        card.AddChild(summary);
+
+        foreach (var snapshot in record.Snapshots.Where(snapshot => snapshot.TotalDamage > 0f).Take(3))
+        {
+            var row = Passthrough(new Label
+            {
+                Text = $"• {snapshot.DisplayName}  {snapshot.TotalDamage:F0}  /  {snapshot.DamagePerTurn:F1} DPT",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            });
+            row.AddThemeColorOverride("font_color", new Color(0.69f, 0.74f, 0.8f));
+            row.AddThemeFontSizeOverride("font_size", 10);
+            card.AddChild(row);
+        }
+
+        card.AddChild(BuildDivider());
+        return card;
+    }
+
     private void Refresh()
     {
         if (!Visible)
@@ -334,6 +504,9 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _lifetimeLabel.Text = DpsTracker.GetLifetimeSummary();
         _lastCombatLabel.Text = DpsTracker.GetLastCombatSummary();
         _footerLabel.Visible = !_collapsed;
+        _mainSections.Visible = !_showCombatHistory;
+        _historyView.Visible = _showCombatHistory && !_collapsed;
+        _historyOpenButton.Text = _showCombatHistory ? "上一场结算 ◂" : "上一场结算 ▸";
 
         if (_collapsed)
             return;
@@ -344,6 +517,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         RebuildRows(_currentRows, DpsTracker.GetSnapshots(currentRows), showDps: true, emptyText: "本场还没有有效伤害。", showRecentHit: true, accent: RowAccent.Primary, compact: false);
         RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(compactRows), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
         RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(compactRows), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
+        RefreshHistoryView();
     }
 
     private static void RebuildRows(VBoxContainer container, IReadOnlyList<DpsTracker.PlayerSnapshot> snapshots, bool showDps, string emptyText, bool showRecentHit, RowAccent accent, bool compact)

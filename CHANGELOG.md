@@ -146,6 +146,8 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Fixed the panel visibility setting so `showPanel` now actually reloads from ModConfig instead of always forcing the overlay visible.
 - Made the overlay respond to the configured visible-row count and grow its panel height with that setting instead of silently ignoring it.
 - Tightened lifetime / last-combat rows and summaries so they show real damage dealers only, avoiding misleading zero-damage roster entries in those views.
+- Added per-run combat history retention in the tracker so the UI can browse older completed fights instead of only keeping one previous-combat snapshot.
+- Turned the last-combat header into a clickable entry point that opens a dedicated in-panel combat-history view for earlier fights in the current run.
 
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.

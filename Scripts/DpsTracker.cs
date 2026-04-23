@@ -4,6 +4,7 @@ internal static class DpsTracker
 {
     private static readonly Dictionary<string, PlayerDamageState> Players = new();
     private static readonly Dictionary<string, LifetimeDamageState> LifetimePlayers = new();
+    private static readonly List<CombatRecord> CombatHistoryRecords = new();
     private static IReadOnlyList<PlayerSnapshot> _publishedCombatSnapshots = Array.Empty<PlayerSnapshot>();
     private static IReadOnlyList<PlayerSnapshot> _previousCombatSnapshots = Array.Empty<PlayerSnapshot>();
     private static int _currentRoundNumber;
@@ -182,10 +183,38 @@ internal static class DpsTracker
             .ToArray();
     }
 
+    internal static string GetCombatHistorySummary()
+    {
+        int recordCount = GetHistoricalCombatRecords().Count;
+        if (recordCount == 0)
+            return "还没有更早的战斗记录。";
+
+        return $"本局已保留 {recordCount} 场更早战斗记录";
+    }
+
+    internal static IReadOnlyList<CombatRecord> GetHistoricalCombatRecords()
+    {
+        if (CombatHistoryRecords.Count == 0)
+            return Array.Empty<CombatRecord>();
+
+        int visibleCount = CombatHistoryRecords.Count;
+        if (!_combatActive && _publishedCombatSeen)
+            visibleCount--;
+
+        if (visibleCount <= 0)
+            return Array.Empty<CombatRecord>();
+
+        return CombatHistoryRecords
+            .Take(visibleCount)
+            .Reverse()
+            .ToArray();
+    }
+
     internal static void Reset()
     {
         Players.Clear();
         LifetimePlayers.Clear();
+        CombatHistoryRecords.Clear();
         _combatActive = false;
         _combatSeen = false;
         _combatFinalizing = false;
@@ -260,6 +289,11 @@ internal static class DpsTracker
         _publishedCombatRoundCount = GetEffectiveRoundCount();
         _publishedCombatSeen = true;
 
+        CombatHistoryRecords.Add(new CombatRecord(
+            CombatHistoryRecords.Count + 1,
+            _publishedCombatRoundCount,
+            finishedSnapshots));
+
         foreach (var state in Players.Values)
         {
             if (state.TotalDamage <= 0f)
@@ -328,4 +362,13 @@ internal static class DpsTracker
         float TotalDamage,
         float DamagePerTurn,
         int SortOrder);
+
+    internal sealed record CombatRecord(
+        int CombatIndex,
+        int RoundCount,
+        IReadOnlyList<PlayerSnapshot> Snapshots)
+    {
+        internal float TotalDamage => Snapshots.Sum(snapshot => snapshot.TotalDamage);
+        internal int ActiveDealers => Snapshots.Count(snapshot => snapshot.TotalDamage > 0f);
+    }
 }

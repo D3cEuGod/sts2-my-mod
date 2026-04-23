@@ -58,6 +58,7 @@
 - Lifetime and last-combat summary views should prefer real damage-dealer rows only; seeded zero-damage roster entries are acceptable in the live combat view but misleading in summary panels.
 - Keep per-run combat-history browsing in tracker/UI state only. Earlier completed fights can be retained for viewing, but this should stay separate from the stable live-combat damage mainline.
 - Additional per-combat stats like highest single hit should be derived from the same already-accepted damage events, not from a second parallel capture path.
+- Overlay panel height should follow visible content for the active view when possible; fixed-height empty space makes the HUD feel less trustworthy during sparse states between combats.
 - Poison was stabilized by an additive combat-local design: `PoisonPower.AfterSideTurnStart(...)` observation, poison-source cache per target, first-tick cache seeding from poison-card history hits, and cached-owner recovery for null-dealer poison history entries.
 - Doom support must stay isolated on `DoomPower.DoomKill(...)` fallback attribution. Its applier lookup must be defensive, and when the live doom power instance does not expose an applier, fallback attribution may use recent doom-source cache or the current single-player combat owner.
 - After successful bug fixes or completed features, write a short maintenance summary into repo memo docs so later debugging can reuse the real fix instead of rediscovering it.

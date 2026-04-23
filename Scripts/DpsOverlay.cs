@@ -12,7 +12,9 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private VBoxContainer _lastCombatRows = null!;
     private VBoxContainer _historyRows = null!;
     private HBoxContainer _historyPagerRow = null!;
+    private VBoxContainer _shell = null!;
     private Label _summaryLabel = null!;
+    private Label _currentChampionLabel = null!;
     private Label _lifetimeLabel = null!;
     private Label _lastCombatLabel = null!;
     private Label _historySummaryLabel = null!;
@@ -30,9 +32,9 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private const int HistoryPageSize = 4;
     private readonly HashSet<int> _expandedCombatCards = new();
     private Vector2 _dragPointerOffset;
-    private float _panelWidth = 300f;
-    private float _expandedPanelHeight = 276f;
-    private float _collapsedPanelHeight = 40f;
+    private float _panelWidth = 338f;
+    private float _expandedPanelHeight = 320f;
+    private float _collapsedPanelHeight = 46f;
     private int _lastAppliedMaxRows = -1;
 
     private static T Passthrough<T>(T control) where T : Control
@@ -96,14 +98,14 @@ internal sealed partial class DpsOverlay : CanvasLayer
         var style = new StyleBoxFlat
         {
             BgColor = new Color(0.09f, 0.1f, 0.12f, 0.9f),
-            CornerRadiusTopLeft = 6,
-            CornerRadiusTopRight = 6,
-            CornerRadiusBottomLeft = 6,
-            CornerRadiusBottomRight = 6,
-            ContentMarginLeft = 9,
-            ContentMarginRight = 9,
-            ContentMarginTop = 7,
-            ContentMarginBottom = 7,
+            CornerRadiusTopLeft = 7,
+            CornerRadiusTopRight = 7,
+            CornerRadiusBottomLeft = 7,
+            CornerRadiusBottomRight = 7,
+            ContentMarginLeft = 11,
+            ContentMarginRight = 11,
+            ContentMarginTop = 9,
+            ContentMarginBottom = 9,
             BorderColor = new Color(0.74f, 0.62f, 0.36f, 0.34f),
             BorderWidthLeft = 1,
             BorderWidthTop = 1,
@@ -114,20 +116,20 @@ internal sealed partial class DpsOverlay : CanvasLayer
         };
         _panel.AddThemeStyleboxOverride("panel", style);
 
-        var shell = new VBoxContainer();
-        shell.AddThemeConstantOverride("separation", 5);
-        shell.MouseFilter = Control.MouseFilterEnum.Pass;
-        _panel.AddChild(shell);
+        _shell = new VBoxContainer();
+        _shell.AddThemeConstantOverride("separation", 7);
+        _shell.MouseFilter = Control.MouseFilterEnum.Pass;
+        _panel.AddChild(_shell);
 
         var headerWrap = new HBoxContainer();
-        headerWrap.AddThemeConstantOverride("separation", 4);
+        headerWrap.AddThemeConstantOverride("separation", 6);
         headerWrap.MouseFilter = Control.MouseFilterEnum.Pass;
-        shell.AddChild(headerWrap);
+        _shell.AddChild(headerWrap);
 
         _dragHandle = new Control();
         _dragHandle.Name = "DragHandle";
         _dragHandle.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        _dragHandle.CustomMinimumSize = new Vector2(0f, 22f);
+        _dragHandle.CustomMinimumSize = new Vector2(0f, 26f);
         _dragHandle.MouseFilter = Control.MouseFilterEnum.Stop;
         _dragHandle.MouseDefaultCursorShape = Control.CursorShape.Move;
         _dragHandle.GuiInput += OnDragHandleGuiInput;
@@ -141,10 +143,10 @@ internal sealed partial class DpsOverlay : CanvasLayer
             BgColor = new Color(0.2f, 0.17f, 0.1f, 0.42f),
             BorderColor = new Color(0.78f, 0.65f, 0.38f, 0.28f),
             BorderWidthBottom = 1,
-            ContentMarginLeft = 6,
-            ContentMarginRight = 6,
-            ContentMarginTop = 2,
-            ContentMarginBottom = 2,
+            ContentMarginLeft = 8,
+            ContentMarginRight = 8,
+            ContentMarginTop = 3,
+            ContentMarginBottom = 3,
             CornerRadiusTopLeft = 3,
             CornerRadiusTopRight = 3,
             CornerRadiusBottomLeft = 3,
@@ -159,18 +161,18 @@ internal sealed partial class DpsOverlay : CanvasLayer
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         title.AddThemeColorOverride("font_color", new Color(0.91f, 0.79f, 0.52f));
-        title.AddThemeFontSizeOverride("font_size", 13);
+        title.AddThemeFontSizeOverride("font_size", 15);
         titleBadge.AddChild(title);
 
         _collapseButton = new Button
         {
             Text = "▾",
             TooltipText = "收起/展开",
-            CustomMinimumSize = new Vector2(20f, 20f),
+            CustomMinimumSize = new Vector2(22f, 22f),
             FocusMode = Control.FocusModeEnum.None,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
         };
-        _collapseButton.AddThemeFontSizeOverride("font_size", 9);
+        _collapseButton.AddThemeFontSizeOverride("font_size", 10);
         _collapseButton.AddThemeColorOverride("font_color", new Color(0.74f, 0.72f, 0.66f));
         _collapseButton.AddThemeStyleboxOverride("normal", new StyleBoxFlat { BgColor = new Color(1f, 1f, 1f, 0.02f), CornerRadiusTopLeft = 3, CornerRadiusTopRight = 3, CornerRadiusBottomLeft = 3, CornerRadiusBottomRight = 3 });
         _collapseButton.AddThemeStyleboxOverride("hover", new StyleBoxFlat { BgColor = new Color(1f, 1f, 1f, 0.05f), CornerRadiusTopLeft = 3, CornerRadiusTopRight = 3, CornerRadiusBottomLeft = 3, CornerRadiusBottomRight = 3 });
@@ -183,12 +185,12 @@ internal sealed partial class DpsOverlay : CanvasLayer
             Color = new Color(0.82f, 0.68f, 0.38f, 0.16f),
             CustomMinimumSize = new Vector2(0f, 1f),
         });
-        shell.AddChild(headerLine);
+        _shell.AddChild(headerLine);
 
         _body = new VBoxContainer();
-        _body.AddThemeConstantOverride("separation", 3);
+        _body.AddThemeConstantOverride("separation", 5);
         _body.MouseFilter = Control.MouseFilterEnum.Ignore;
-        shell.AddChild(_body);
+        _shell.AddChild(_body);
 
         _mainSections = new VBoxContainer();
         _mainSections.AddThemeConstantOverride("separation", 3);
@@ -198,6 +200,8 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _mainSections.AddChild(BuildSectionTitle("当前战斗"));
         _summaryLabel = BuildSectionLabel();
         _mainSections.AddChild(_summaryLabel);
+        _currentChampionLabel = BuildChampionLabel();
+        _mainSections.AddChild(_currentChampionLabel);
         _currentRows = BuildRowsContainer();
         _mainSections.AddChild(_currentRows);
 
@@ -301,7 +305,26 @@ internal sealed partial class DpsOverlay : CanvasLayer
             return;
 
         _lastAppliedMaxRows = PrototypeSettings.MaxRows;
-        _expandedPanelHeight = 276f + Math.Max(0, PrototypeSettings.MaxRows - 2) * 24f;
+        AdjustPanelHeightToContent();
+    }
+
+    private void AdjustPanelHeightToContent()
+    {
+        if (_collapsed)
+        {
+            _expandedPanelHeight = Math.Max(_expandedPanelHeight, _collapsedPanelHeight);
+            ApplyCollapsedState();
+            SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
+            return;
+        }
+
+        float contentHeight = _showCombatHistory
+            ? _historyView.GetCombinedMinimumSize().Y
+            : _mainSections.GetCombinedMinimumSize().Y;
+
+        Rect2 visibleRect = GetViewport().GetVisibleRect();
+        float targetHeight = Mathf.Clamp(contentHeight + 74f, 150f, Math.Max(150f, visibleRect.Size.Y - 24f));
+        _expandedPanelHeight = targetHeight;
         ApplyCollapsedState();
         SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
     }
@@ -323,7 +346,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             HorizontalAlignment = HorizontalAlignment.Left,
         });
         label.AddThemeColorOverride("font_color", new Color(0.75f, 0.78f, 0.82f));
-        label.AddThemeFontSizeOverride("font_size", 12);
+        label.AddThemeFontSizeOverride("font_size", 13);
         return label;
     }
 
@@ -334,7 +357,19 @@ internal sealed partial class DpsOverlay : CanvasLayer
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         label.AddThemeColorOverride("font_color", new Color(0.66f, 0.64f, 0.6f));
-        label.AddThemeFontSizeOverride("font_size", 11);
+        label.AddThemeFontSizeOverride("font_size", 12);
+        return label;
+    }
+
+    private static Label BuildChampionLabel()
+    {
+        var label = Passthrough(new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            Visible = false,
+        });
+        label.AddThemeColorOverride("font_color", new Color(0.9f, 0.8f, 0.52f));
+        label.AddThemeFontSizeOverride("font_size", 12);
         return label;
     }
 
@@ -358,7 +393,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             TooltipText = "查看本局更早战斗记录",
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
         };
-        _historyOpenButton.AddThemeFontSizeOverride("font_size", 12);
+        _historyOpenButton.AddThemeFontSizeOverride("font_size", 13);
         _historyOpenButton.AddThemeColorOverride("font_color", new Color(0.75f, 0.78f, 0.82f));
         _historyOpenButton.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
         _historyOpenButton.AddThemeStyleboxOverride("hover", new StyleBoxEmpty());
@@ -368,7 +403,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
 
         var hint = Passthrough(new Label { Text = "查看本局内更早战斗" });
         hint.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
-        hint.AddThemeFontSizeOverride("font_size", 10);
+        hint.AddThemeFontSizeOverride("font_size", 11);
         row.AddChild(hint);
         row.AddChild(Passthrough(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }));
 
@@ -392,13 +427,13 @@ internal sealed partial class DpsOverlay : CanvasLayer
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             TooltipText = "返回主面板",
         };
-        backButton.AddThemeFontSizeOverride("font_size", 11);
+        backButton.AddThemeFontSizeOverride("font_size", 12);
         backButton.Pressed += CloseCombatHistory;
         topRow.AddChild(backButton);
 
         var title = Passthrough(new Label { Text = "本局战斗记录", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         title.AddThemeColorOverride("font_color", new Color(0.91f, 0.79f, 0.52f));
-        title.AddThemeFontSizeOverride("font_size", 13);
+        title.AddThemeFontSizeOverride("font_size", 15);
         topRow.AddChild(title);
 
         _historySummaryLabel = BuildSectionLabel();
@@ -414,13 +449,13 @@ internal sealed partial class DpsOverlay : CanvasLayer
             FocusMode = Control.FocusModeEnum.None,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
         };
-        prevButton.AddThemeFontSizeOverride("font_size", 10);
+        prevButton.AddThemeFontSizeOverride("font_size", 11);
         prevButton.Pressed += PrevHistoryPage;
         _historyPagerRow.AddChild(prevButton);
 
         _historyPageLabel = Passthrough(new Label { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Center });
         _historyPageLabel.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
-        _historyPageLabel.AddThemeFontSizeOverride("font_size", 10);
+        _historyPageLabel.AddThemeFontSizeOverride("font_size", 11);
         _historyPagerRow.AddChild(_historyPageLabel);
 
         var nextButton = new Button
@@ -429,7 +464,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             FocusMode = Control.FocusModeEnum.None,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
         };
-        nextButton.AddThemeFontSizeOverride("font_size", 10);
+        nextButton.AddThemeFontSizeOverride("font_size", 11);
         nextButton.Pressed += NextHistoryPage;
         _historyPagerRow.AddChild(nextButton);
 
@@ -588,7 +623,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         summary.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
-        summary.AddThemeFontSizeOverride("font_size", 10);
+        summary.AddThemeFontSizeOverride("font_size", 11);
         body.AddChild(summary);
 
         var champion = record.Snapshots
@@ -604,7 +639,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             championLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.8f, 0.52f));
-            championLabel.AddThemeFontSizeOverride("font_size", 11);
+            championLabel.AddThemeFontSizeOverride("font_size", 12);
             body.AddChild(championLabel);
         }
 
@@ -618,7 +653,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             row.AddThemeColorOverride("font_color", new Color(0.69f, 0.74f, 0.8f));
-            row.AddThemeFontSizeOverride("font_size", 10);
+            row.AddThemeFontSizeOverride("font_size", 11);
             body.AddChild(row);
         }
 
@@ -631,7 +666,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             moreLabel.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
-            moreLabel.AddThemeFontSizeOverride("font_size", 10);
+            moreLabel.AddThemeFontSizeOverride("font_size", 11);
             body.AddChild(moreLabel);
         }
 
@@ -659,6 +694,12 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _historyView.Visible = _showCombatHistory && !_collapsed;
         _historyOpenButton.Text = _showCombatHistory ? "上一场结算 ◂" : "上一场结算 ▸";
 
+        var championSnapshot = DpsTracker.GetSnapshots(1).FirstOrDefault();
+        bool hasChampion = championSnapshot != null && championSnapshot.TotalDamage > 0f;
+        _currentChampionLabel.Visible = hasChampion;
+        if (hasChampion)
+            _currentChampionLabel.Text = $"🏆 当前冠军 {championSnapshot!.DisplayName} · {championSnapshot.TotalDamage:F0} · {championSnapshot.DamagePerTurn:F1} DPT · 最高单次 {championSnapshot.HighestSingleHit:F0}";
+
         if (_collapsed)
             return;
 
@@ -669,6 +710,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(compactRows), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
         RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(compactRows), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
         RefreshHistoryView();
+        AdjustPanelHeightToContent();
     }
 
     private static void RebuildRows(VBoxContainer container, IReadOnlyList<DpsTracker.PlayerSnapshot> snapshots, bool showDps, string emptyText, bool showRecentHit, RowAccent accent, bool compact)
@@ -698,7 +740,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         label.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
-        label.AddThemeFontSizeOverride("font_size", 11);
+        label.AddThemeFontSizeOverride("font_size", 12);
         return label;
     }
 
@@ -710,10 +752,10 @@ internal sealed partial class DpsOverlay : CanvasLayer
         var header = Passthrough(new HBoxContainer());
         header.AddThemeConstantOverride("separation", 4);
 
-        var rankLabel = Passthrough(new Label { Text = $"#{rank}" });
-        rankLabel.CustomMinimumSize = new Vector2(22f, 0f);
+        var rankLabel = Passthrough(new Label { Text = rank == 1 && showDps ? "#1 👑" : $"#{rank}" });
+        rankLabel.CustomMinimumSize = new Vector2(34f, 0f);
         rankLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.65f, 0.38f));
-        rankLabel.AddThemeFontSizeOverride("font_size", 12);
+        rankLabel.AddThemeFontSizeOverride("font_size", 13);
         header.AddChild(rankLabel);
 
         var nameLabel = Passthrough(new Label
@@ -722,7 +764,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         });
         nameLabel.AddThemeColorOverride("font_color", new Color(0.87f, 0.86f, 0.82f));
-        nameLabel.AddThemeFontSizeOverride("font_size", 13);
+        nameLabel.AddThemeFontSizeOverride("font_size", 14);
         header.AddChild(nameLabel);
 
         string rightText = showDps
@@ -735,7 +777,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             RowAccent.Secondary => new Color(0.66f, 0.73f, 0.8f),
             _ => new Color(0.53f, 0.58f, 0.62f),
         });
-        rightLabel.AddThemeFontSizeOverride("font_size", 12);
+        rightLabel.AddThemeFontSizeOverride("font_size", 13);
         header.AddChild(rightLabel);
 
         box.AddChild(header);
@@ -749,7 +791,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             detail.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
-            detail.AddThemeFontSizeOverride("font_size", 10);
+            detail.AddThemeFontSizeOverride("font_size", 11);
             box.AddChild(detail);
         }
 

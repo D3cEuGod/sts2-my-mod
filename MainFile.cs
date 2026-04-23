@@ -7,11 +7,12 @@ namespace Sts2DpsPrototype;
 public partial class MainFile : Godot.Node
 {
     internal const string ModId = "sts2.jason.dpsprototype";
-    internal const string Version = "1.0.2";
+    internal const string Version = "1.1.1";
     internal static readonly Logger Log = new(ModId, LogType.Generic);
 
     public static void Initialize()
     {
+        ModConfigBridge.DeferredRegister();
         PrototypeSettings.Load();
         DamageHookPatches.EnsurePatched();
         DamageDebugPatches.EnsurePatched();

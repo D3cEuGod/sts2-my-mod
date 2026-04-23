@@ -184,7 +184,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _body.AddChild(_currentRows);
 
         _body.AddChild(BuildDivider());
-        _body.AddChild(BuildSectionTitle("累计伤害"));
+        _body.AddChild(BuildSectionTitle("本局累计"));
         _lifetimeLabel = BuildSectionLabel();
         _body.AddChild(_lifetimeLabel);
         _lifetimeRows = BuildRowsContainer();

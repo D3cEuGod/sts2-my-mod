@@ -10,18 +10,23 @@ internal static class DpsTracker
     private static int _publishedCombatRoundCount;
     private static bool _combatActive;
     private static bool _combatSeen;
+    private static bool _combatFinalizing;
     private static bool _publishedCombatSeen;
     private static bool _previousCombatSeen;
 
     internal static void Tick(double delta)
     {
+        FinalizeCombatIfPending();
     }
 
     internal static void BeginCombat(IEnumerable<PlayerSeed>? roster = null)
     {
+        FinalizeCombatIfPending();
+
         Players.Clear();
         _combatActive = true;
         _combatSeen = true;
+        _combatFinalizing = false;
         _currentRoundNumber = 1;
 
         if (roster == null)
@@ -46,35 +51,7 @@ internal static class DpsTracker
             return;
 
         _combatActive = false;
-
-        var finishedSnapshots = BuildLiveSnapshots(int.MaxValue).ToArray();
-        if (finishedSnapshots.Length == 0)
-            return;
-
-        if (_publishedCombatSeen)
-        {
-            _previousCombatSnapshots = _publishedCombatSnapshots.ToArray();
-            _previousCombatSeen = _previousCombatSnapshots.Count > 0;
-        }
-
-        _publishedCombatSnapshots = finishedSnapshots;
-        _publishedCombatRoundCount = GetEffectiveRoundCount();
-        _publishedCombatSeen = true;
-
-        foreach (var state in Players.Values)
-        {
-            if (state.TotalDamage <= 0f)
-                continue;
-
-            if (!LifetimePlayers.TryGetValue(state.PlayerId, out var lifetime))
-            {
-                lifetime = new LifetimeDamageState(state.PlayerId, state.DisplayName, state.SortOrder);
-                LifetimePlayers[state.PlayerId] = lifetime;
-            }
-
-            lifetime.DisplayName = state.DisplayName;
-            lifetime.TotalDamage += state.TotalDamage;
-        }
+        _combatFinalizing = true;
     }
 
     internal static bool HasRoster(IReadOnlyList<PlayerSeed> roster)
@@ -90,7 +67,7 @@ internal static class DpsTracker
         if (string.IsNullOrWhiteSpace(playerId) || damage <= 0f)
             return;
 
-        if (!_combatActive)
+        if (!_combatActive && !_combatFinalizing)
             BeginCombat();
 
         if (!Players.TryGetValue(playerId, out var state))
@@ -140,9 +117,9 @@ internal static class DpsTracker
             totalDamage += Players.Values.Sum(player => player.TotalDamage);
 
         if (totalDamage <= 0f)
-            return "本次启动后还没有累计到有效伤害。";
+            return "当前这一局还没有累计到有效伤害。";
 
-        return $"本次启动累计总伤害 {totalDamage:F0}";
+        return $"当前这一局累计总伤害 {totalDamage:F0}";
     }
 
     internal static string GetLastCombatSummary()
@@ -157,10 +134,32 @@ internal static class DpsTracker
 
     internal static IReadOnlyList<PlayerSnapshot> GetLifetimeSnapshots(int maxRows)
     {
-        if (LifetimePlayers.Count == 0)
+        var combined = LifetimePlayers.Values.ToDictionary(
+            state => state.PlayerId,
+            state => new LifetimeDamageState(state.PlayerId, state.DisplayName, state.SortOrder)
+            {
+                TotalDamage = state.TotalDamage
+            });
+
+        if (_combatActive)
+        {
+            foreach (var state in Players.Values)
+            {
+                if (!combined.TryGetValue(state.PlayerId, out var lifetime))
+                {
+                    lifetime = new LifetimeDamageState(state.PlayerId, state.DisplayName, state.SortOrder);
+                    combined[state.PlayerId] = lifetime;
+                }
+
+                lifetime.DisplayName = state.DisplayName;
+                lifetime.TotalDamage += state.TotalDamage;
+            }
+        }
+
+        if (combined.Count == 0)
             return Array.Empty<PlayerSnapshot>();
 
-        return LifetimePlayers.Values
+        return combined.Values
             .Select(state => new PlayerSnapshot(
                 state.PlayerId,
                 state.DisplayName,
@@ -184,12 +183,19 @@ internal static class DpsTracker
         LifetimePlayers.Clear();
         _combatActive = false;
         _combatSeen = false;
+        _combatFinalizing = false;
         _publishedCombatSeen = false;
         _previousCombatSeen = false;
         _publishedCombatSnapshots = Array.Empty<PlayerSnapshot>();
         _previousCombatSnapshots = Array.Empty<PlayerSnapshot>();
         _currentRoundNumber = 1;
         _publishedCombatRoundCount = 0;
+    }
+
+    internal static void ResetForNewRun()
+    {
+        Reset();
+        MainFile.Log.Info("[RUN_RESET] Cleared combat, last-combat, and run-total damage state for a new run.");
     }
 
     private static IReadOnlyList<PlayerSnapshot> BuildLiveSnapshots(int maxRows)
@@ -226,6 +232,45 @@ internal static class DpsTracker
     private static int GetEffectiveRoundCount()
     {
         return Math.Max(1, _currentRoundNumber);
+    }
+
+    private static void FinalizeCombatIfPending()
+    {
+        if (_combatActive || !_combatFinalizing)
+            return;
+
+        _combatFinalizing = false;
+
+        var finishedSnapshots = BuildLiveSnapshots(int.MaxValue).ToArray();
+        if (finishedSnapshots.Length == 0)
+            return;
+
+        if (_publishedCombatSeen)
+        {
+            _previousCombatSnapshots = _publishedCombatSnapshots.ToArray();
+            _previousCombatSeen = _previousCombatSnapshots.Count > 0;
+        }
+
+        _publishedCombatSnapshots = finishedSnapshots;
+        _publishedCombatRoundCount = GetEffectiveRoundCount();
+        _publishedCombatSeen = true;
+
+        foreach (var state in Players.Values)
+        {
+            if (state.TotalDamage <= 0f)
+                continue;
+
+            if (!LifetimePlayers.TryGetValue(state.PlayerId, out var lifetime))
+            {
+                lifetime = new LifetimeDamageState(state.PlayerId, state.DisplayName, state.SortOrder);
+                LifetimePlayers[state.PlayerId] = lifetime;
+            }
+
+            lifetime.DisplayName = state.DisplayName;
+            lifetime.TotalDamage += state.TotalDamage;
+        }
+
+        MainFile.Log.Info($"[COMBAT_FINALIZED] rounds={_publishedCombatRoundCount} players={finishedSnapshots.Length} total={finishedSnapshots.Sum(player => player.TotalDamage):F0}");
     }
 
     private static PlayerDamageState SeedPlayer(string playerId, string playerName, int sortOrder)

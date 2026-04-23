@@ -94,6 +94,54 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Confirmed several likely non-attack damage paths worth future classification, including `ThornsPower`, `ReflectPower`, `OstyCmd`, and HP-loss related hooks.
 - Added a log-validation build that now logs final damage events plus weak/vulnerable/thorns/reflect/osty-related debug signals during combat.
 
+## 2026-04-22
+
+### Damage validation follow-up
+- Excluded self-damage from the main tracked-output path so HP-cost / self-hit events no longer inflate DPT totals.
+- Added explicit `[DAMAGE_SKIPPED_SELF]` logging to confirm when a damage event was intentionally ignored for self-damage reasons.
+- Corrected weak/vulnerable debug logging to treat `ModifyDamageMultiplicative(...)` as a multiplier hook instead of a final-damage value.
+- Updated debug logs to emit `input`, `multiplier`, `estimatedFinal`, and `estimatedDelta` fields, reducing misleading negative-delta spam from the earlier logging format.
+- Rebuilt the mod successfully after the logging/self-damage fixes.
+- Fixed the local build deployment target so post-build copy now writes to the real macOS game mod directory (`SlayTheSpire2.app/Contents/MacOS/mods`) instead of the stale top-level `$(Sts2Dir)/mods` path.
+- Stopped copying `mod_manifest.json` into the live game mod directory because having both runtime manifest files caused duplicate mod discovery and a second-load error.
+- Updated repo notes to track the newly confirmed live issues: per-run lifetime totals bleeding across runs, poison/doom-style debuff damage missing from the panel, and weak/vulnerable validation logs still needing noise reduction.
+- Reset the tracker on `RunManager.RunStarted` so run-total damage, combat state, and last-combat carryover no longer bleed into the next run.
+- Updated the overlay wording from startup-lifetime phrasing to current-run phrasing (`本局累计` / `当前这一局累计总伤害`).
+- Delayed combat finalization by one tick so end-of-combat lethal hits are still included before snapshots and run totals are published.
+- Tried a `CreatureCmd.Damage(...)` capture path for lethal-hit coverage, but rolled it back after it regressed normal damage tracking. The stable live path is back to `CombatHistory.DamageReceived(...)` while lethal-hit handling is investigated separately.
+- Added an isolated lethal-hit fallback: normal damage still records through `CombatHistory.DamageReceived(...)`, while `CreatureCmd.Damage(...)` observers now supplement only missing player-caused lethal hits that never reach combat history. Expanded the observer from one overload to all single-target `CreatureCmd.Damage(...)` overloads used by this build.
+- Added `CombatManager.CombatWon` logging of final enemy HP/block/dead state to diagnose the final-enemy kill path without changing the main damage-tracking flow.
+- Added a final-victory fallback that caches the last targeted enemy's pre-hit HP/block from `PlayCardAction.ExecuteAction` and, if combat is won with no matching damage history record, infers the missing final-hit contribution as `preHp + preBlock`.
+- Began isolated debuff/HP-loss support without touching the stable main damage path: cache owner/target context from `Hook.ModifyHpLostAfterOsty(...)`, then, when `Creature.LoseHpInternal(...)` resolves with no matching combat-history hit, attribute that HP-loss result through a separate fallback path.
+- Immediately rolled back that first HP-loss fallback attempt after live testing showed it could break Neow reward flow with `Hook.AfterModifyingHpLostAfterOsty(...)` null-source failures during non-combat max-HP loss handling. Normal combat and the previously fixed final-hit behavior remain the stable baseline.
+- Replaced the broad HP-loss experiment with narrower combat-only debuff hooks on `PoisonPower.AfterSideTurnStart(...)` and `DoomPower.DoomKill(...)`, so poison / doom fallback attribution stays inside combat-specific power code paths instead of touching generic non-combat HP-loss flow.
+- Hardened combat-history capture for combat-only debuff testing after live logs showed poison can reach `CombatHistory.DamageReceived(...)` with a null `dealer`; the tracker now tolerates null dealers instead of throwing and freezing the enemy turn.
+- Hardened the poison-only fallback again after live logs showed `PoisonPower.CalculateTotalDamageNextTurn()` can throw during lethal poison resolution. The fallback now reads the poison amount from internal power fields instead of calling the unstable getter during the combat-end edge case.
+- Updated tracked-damage semantics to use the game's `DamageResult.TotalDamage` directly instead of subtracting `OverkillDamage` a second time. User testing showed the runtime total being reported here already reflects the real dealt damage they expect to see on the panel.
+- Fixed poison double-counting by limiting the poison fallback to `CombatSide.Enemy` in `PoisonPower.AfterSideTurnStart(...)`, so it only records once at the player-turn-end boundary instead of again at the next player-turn start.
+- Simplified poison fallback timing again so it now records synchronously at the player-turn-end / enemy-side-start boundary instead of waiting on the async power task. This matches the desired panel timing and avoids poison-kill edge cases caused by async completion ordering.
+- Added a combat-local poison-source cache so poison kills can still be attributed when the final `PoisonPower` tick no longer exposes a live applier on the lethal turn boundary.
+- Reworked poison fallback to wait for `PoisonPower.AfterSideTurnStart(...)` completion, then only infer damage if no matching `CombatHistory` entry appeared for that exact tick, avoiding poison double-counting while still covering missing lethal/mid-combat poison entries.
+- Relaxed poison history dedupe to match by poisoned target instead of requiring a non-null dealer, and seed the poison-owner cache from poison card plays so normal poison ticks still resolve an owner when `PoisonPower` arrives without a live applier.
+- If `CombatHistory.DamageReceived(...)` arrives for a poison-style null-card tick with `dealer == null`, it now reuses the cached poison source before recording DPS, so ordinary poison ticks can count on the main history path instead of being skipped as ownerless.
+- Added temporary poison diagnostics around `PoisonPower.AfterSideTurnStart(...)`, poison-source cache updates, and null-card `CombatHistory.DamageReceived(...)` so the missing ordinary poison-tick path could be traced exactly instead of guessing.
+- Seed poison-source cache from direct poison-card `CombatHistory` hits as well, so the first ordinary poison tick on a target can resolve a cached owner even when the poison tick's own history arrives before the power callback updates cache.
+- Removed the temporary poison diagnostic log spam after confirming poison tick attribution is stable again.
+- Hardened doom fallback attribution so `DoomPower.DoomKill(...)` no longer dies when power-applier reflection is unavailable, and now falls back to a recent doom-card dealer cache or the current single-player combat owner when the live doom power instance does not expose an applier.
+- Wrote repo-maintenance summaries into `AGENTS.md` and `notes/decisions.md` describing the stable poison and doom repair strategy, so future updates can reuse the proven fix path instead of rediscovering it.
+- Updated workspace `USER.md` and `SOUL.md` so successful bug fixes and completed features should be followed by a short repo-local maintenance summary in that repo's memo/docs.
+- Updated repo issue/backlog notes so poison and doom debuff attribution are marked as fixed current behavior instead of remaining active blockers.
+- Reduced weak/vulnerable validation log spam by turning `WEAK_MOD` / `VULN_MOD` into short-window deduped probes instead of logging every repeated identical multiplier evaluation.
+- Applied the same short-window dedupe pattern to `THORNS_PRE`, `REFLECT_POST`, and `OSTY_SUMMON` so debug validation stays available without flooding combat logs.
+
+## 2026-04-23
+
+### Release prep for 1.1.1
+- Set repo release version fields to `1.1.1`.
+- Fixed optional ModConfig registration by calling `ModConfigBridge.DeferredRegister()` during initialization.
+- Updated release docs to reflect the `1.1.1` DLL-only package name and current install expectations.
+- Kept the recommended public release shape as DLL-only, because the repo's last verified stable runtime path still avoids shipping an exported `.pck`.
+
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.
 - Prefer short bullets describing user-visible or debug-relevant code changes.

@@ -29,6 +29,7 @@ Do not use legacy StS1 references as proof of StS2 runtime behavior.
 - Reuse patterns from examples before creating new architecture.
 - Explain every new file you create.
 - Keep functions and files small unless there is a strong reason not to.
+- Strictly follow modular programming design. Add new behavior in isolated, well-bounded paths whenever possible, and do not let one new feature block, break, or crowd out previously working behavior.
 - When unsure, leave a short TODO comment and document the uncertainty in notes/known-issues.md.
 - Do not rename large parts of the repo unless requested.
 - Do not add dependencies unless required by the confirmed modding workflow.
@@ -43,6 +44,7 @@ Do not use legacy StS1 references as proof of StS2 runtime behavior.
 - Avoid speculative abstractions.
 - Keep debug helpers isolated when practical.
 - Add reusable helpers only after at least two real use cases appear.
+- Before starting substantive work in this repo or any new repo, explicitly state the modular boundary you intend to preserve, especially when a new feature could interfere with an already working runtime path.
 - When UI behavior is uncertain, prove visibility first with an obvious diagnostic before tuning layout details.
 
 ## Documentation rules
@@ -90,3 +92,36 @@ A task is done only if:
 - preserve save safety and avoid progression corruption
 - keep the overlay compact, readable, and usable in the real game UI
 - continue documenting verified runtime findings instead of guessing from StS1 or incomplete examples
+
+## Repo memo, read this before touching debuff damage again
+This is the repo-level memo that should be checked on every future update to this repo, especially before touching DPS attribution, combat hooks, or fallback logic.
+
+### Poison, final stable fix summary
+- Keep the normal damage mainline on `CombatHistory.DamageReceived(...)`. Do not move the whole system onto generic HP-loss hooks or broad `CreatureCmd.Damage(...)` paths.
+- Do not use broad HP-loss hooks like `Hook.ModifyHpLostAfterOsty(...)` or `Creature.LoseHpInternal(...)` for poison support. That path regressed non-combat flow and even broke Neow-related progression flow.
+- Stable poison support is now combat-local and additive:
+  - observe `PoisonPower.AfterSideTurnStart(...)`
+  - cache poison owner attribution per poisoned target
+  - also seed that cache from direct poison-card history hits so a target's first poison tick already has an owner
+  - if poison combat history arrives with `dealer == null` and `cardSource == null`, reuse the cached poison source before recording DPS
+- Poison fallback should only fill missing poison ticks. It must not disturb the stable mainline for normal hits.
+- The key live-debug lesson: poison timing is not stable enough to rely on only one callback. The working solution came from combining:
+  - main history path
+  - combat-local poison-source cache
+  - first-tick cache seeding
+  - null-dealer poison history recovery
+
+### Doom, current stable fix summary
+- Keep doom isolated from poison and from generic HP-loss handling.
+- Doom support lives on the `DoomPower.DoomKill(...)` path plus fallback attribution only.
+- `ResolvePowerApplier(...)` can fail on doom runtime objects, so applier lookup must be defensive and never crash the hook.
+- Doom attribution currently falls back in this order:
+  1. live doom power applier
+  2. recent doom-source cache
+  3. current single-player combat owner
+- That fallback order was added because doom can come from more than one source shape, including cards and potion-like application paths.
+- If doom regresses again, debug only the doom path. Do not reopen poison or broad HP-loss code unless the runtime evidence clearly requires it.
+
+### Maintenance rule for successful fixes/features
+- When a bug is successfully fixed, or a feature is successfully completed, add a short repo memo describing what actually fixed it and what paths must not be disturbed.
+- Prefer writing that maintenance knowledge here in `AGENTS.md`, plus `CHANGELOG.md` and `notes/decisions.md` when the change affects repo behavior or future debugging decisions.

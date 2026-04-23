@@ -43,6 +43,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\mods\
 ## 说明
 
 - 当前 live runtime 已知最稳的路径是 **DLL-only**。
+- 当前 `1.1.1` 版本已补上 ModConfig 的延迟注册调用，因此如果你安装了 ModConfig，设置页应能正常出现。
 - 这个包刻意 **不包含 `.pck`**，因为之前已确认过导出的 `.pck` 存在 Godot 运行时版本兼容风险。
 - 这个包也只保留一份 manifest（`Sts2DpsPrototype.json`），避免安装目录里出现重复 manifest 导致 mod 被扫描两次。
 - 如果之后重新验证了 `.pck` 与游戏运行时兼容，再考虑恢复完整资源包发布。

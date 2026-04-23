@@ -10,6 +10,8 @@ namespace Sts2DpsPrototype;
 internal static class DamageDebugPatches
 {
     private static bool _patched;
+    private static readonly List<RecentModifierLog> RecentModifierLogs = new();
+    private static readonly List<RecentEventLog> RecentEventLogs = new();
 
     internal static void EnsurePatched()
     {
@@ -49,28 +51,94 @@ internal static class DamageDebugPatches
 
     private static void OnThornsBeforeDamageReceived(Creature target, decimal amount, Creature dealer, CardModel? cardSource)
     {
-        MainFile.Log.Info($"[THORNS_PRE] dealer={DescribeCreature(dealer)} target={DescribeCreature(target)} amount={amount:0.##} card={DescribeCard(cardSource)}");
+        string dealerName = DescribeCreature(dealer);
+        string targetName = DescribeCreature(target);
+        string cardName = DescribeCard(cardSource);
+        string payload = $"amount={amount:0.##}";
+        if (WasRecentlyLoggedEvent("THORNS_PRE", dealerName, targetName, cardName, payload))
+            return;
+
+        MainFile.Log.Info($"[THORNS_PRE] dealer={dealerName} target={targetName} amount={amount:0.##} card={cardName}");
     }
 
     private static void OnReflectAfterDamageReceived(Creature target, DamageResult result, Creature dealer, CardModel? cardSource)
     {
+        string dealerName = DescribeCreature(dealer);
+        string targetName = DescribeCreature(target);
+        string cardName = DescribeCard(cardSource);
+        string payload = $"total={result.TotalDamage}|unblocked={result.UnblockedDamage}|blocked={result.BlockedDamage}|overkill={result.OverkillDamage}";
+        if (WasRecentlyLoggedEvent("REFLECT_POST", dealerName, targetName, cardName, payload))
+            return;
+
         MainFile.Log.Info(
-            $"[REFLECT_POST] dealer={DescribeCreature(dealer)} target={DescribeCreature(target)} total={result.TotalDamage} unblocked={result.UnblockedDamage} blocked={result.BlockedDamage} overkill={result.OverkillDamage} card={DescribeCard(cardSource)}");
+            $"[REFLECT_POST] dealer={dealerName} target={targetName} total={result.TotalDamage} unblocked={result.UnblockedDamage} blocked={result.BlockedDamage} overkill={result.OverkillDamage} card={cardName}");
     }
 
     private static void OnOstySummon(Player summoner, decimal amount, AbstractModel? source)
     {
-        MainFile.Log.Info($"[OSTY_SUMMON] summoner={DescribePlayer(summoner)} amount={amount:0.##} source={source?.GetType().Name ?? "<null>"}");
-    }
-
-    private static void LogDamageModifier(string tag, Creature dealer, Creature target, CardModel? cardSource, decimal originalAmount, decimal modifiedAmount)
-    {
-        if (originalAmount == modifiedAmount)
+        string summonerName = DescribePlayer(summoner);
+        string sourceName = source?.GetType().Name ?? "<null>";
+        string payload = $"amount={amount:0.##}";
+        if (WasRecentlyLoggedEvent("OSTY_SUMMON", summonerName, "<none>", sourceName, payload))
             return;
 
-        decimal delta = modifiedAmount - originalAmount;
+        MainFile.Log.Info($"[OSTY_SUMMON] summoner={summonerName} amount={amount:0.##} source={sourceName}");
+    }
+
+    private static void LogDamageModifier(string tag, Creature dealer, Creature target, CardModel? cardSource, decimal inputAmount, decimal multiplier)
+    {
+        if (multiplier == 1m)
+            return;
+
+        string dealerName = DescribeCreature(dealer);
+        string targetName = DescribeCreature(target);
+        string cardName = DescribeCard(cardSource);
+        if (WasRecentlyLogged(tag, dealerName, targetName, cardName, inputAmount, multiplier))
+            return;
+
+        decimal estimatedFinal = inputAmount * multiplier;
+        decimal estimatedDelta = estimatedFinal - inputAmount;
         MainFile.Log.Info(
-            $"[{tag}] dealer={DescribeCreature(dealer)} target={DescribeCreature(target)} card={DescribeCard(cardSource)} base={originalAmount:0.##} modified={modifiedAmount:0.##} delta={delta:+0.##;-0.##;0}");
+            $"[{tag}] dealer={dealerName} target={targetName} card={cardName} input={inputAmount:0.##} multiplier={multiplier:0.###} estimatedFinal={estimatedFinal:0.##} estimatedDelta={estimatedDelta:+0.##;-0.##;0}");
+    }
+
+    private static bool WasRecentlyLogged(string tag, string dealerName, string targetName, string cardName, decimal inputAmount, decimal multiplier)
+    {
+        long now = DateTime.UtcNow.Ticks;
+        long cutoff = now - TimeSpan.FromSeconds(2).Ticks;
+        RecentModifierLogs.RemoveAll(entry => entry.TimestampTicks < cutoff);
+
+        bool alreadyLogged = RecentModifierLogs.Any(entry =>
+            entry.Tag == tag
+            && entry.DealerName == dealerName
+            && entry.TargetName == targetName
+            && entry.CardName == cardName
+            && entry.InputAmount == inputAmount
+            && entry.Multiplier == multiplier);
+        if (alreadyLogged)
+            return true;
+
+        RecentModifierLogs.Add(new RecentModifierLog(now, tag, dealerName, targetName, cardName, inputAmount, multiplier));
+        return false;
+    }
+
+    private static bool WasRecentlyLoggedEvent(string tag, string actorName, string targetName, string sourceName, string payload)
+    {
+        long now = DateTime.UtcNow.Ticks;
+        long cutoff = now - TimeSpan.FromSeconds(2).Ticks;
+        RecentEventLogs.RemoveAll(entry => entry.TimestampTicks < cutoff);
+
+        bool alreadyLogged = RecentEventLogs.Any(entry =>
+            entry.Tag == tag
+            && entry.ActorName == actorName
+            && entry.TargetName == targetName
+            && entry.SourceName == sourceName
+            && entry.Payload == payload);
+        if (alreadyLogged)
+            return true;
+
+        RecentEventLogs.Add(new RecentEventLog(now, tag, actorName, targetName, sourceName, payload));
+        return false;
     }
 
     private static string DescribeCreature(Creature? creature)
@@ -98,4 +166,21 @@ internal static class DamageDebugPatches
     {
         return cardSource?.GetType().Name ?? "<null>";
     }
+
+    private sealed record RecentModifierLog(
+        long TimestampTicks,
+        string Tag,
+        string DealerName,
+        string TargetName,
+        string CardName,
+        decimal InputAmount,
+        decimal Multiplier);
+
+    private sealed record RecentEventLog(
+        long TimestampTicks,
+        string Tag,
+        string ActorName,
+        string TargetName,
+        string SourceName,
+        string Payload);
 }

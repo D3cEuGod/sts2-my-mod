@@ -14,6 +14,10 @@
 - The current runtime path uses `CombatManager` for combat boundaries and roster seeding, and Harmony-patches `CombatHistory.DamageReceived(...)` for per-hit damage capture.
 - This patch path compiles cleanly against the real local `sts2.dll`, but the exact best damage metric is still not fully verified.
 - Current damage accounting may still need adjustment, for example around `TotalDamage`, `OverkillDamage`, or `UnblockedDamage` semantics.
+- Poison-triggered damage is now confirmed working on the current tracked-output path after adding cached poison-source attribution for null-dealer history entries and first-tick cache seeding.
+- Doom-triggered damage is now confirmed working on the current tracked-output path after defensive applier lookup plus fallback attribution from recent doom source or the current single-player combat owner.
+- Current run-level lifetime totals can bleed across runs instead of resetting cleanly at the start of a new game, so the “overall” panel is not yet trustworthy as a per-run total.
+- Weak / vulnerable / thorns / reflect / osty debug hooks are now throttled as short-window deduped probes, but they should still be treated as validation probes rather than clean event counts.
 - Multiplayer grouping uses `player.NetId`, and pet damage is attributed to `PetOwner`.
 - Display names are improved by seeding the combat roster up front and formatting multiplayer rows with stable slot prefixes, but we still do not know whether there is a better official player-facing name source.
 - Whether `CombatSetUp` / `CombatEnded` are the correct final boundaries for all encounter types is still unverified.
@@ -42,7 +46,7 @@
 
 ## remaining blockers / open questions
 
-- Need to verify that `CombatHistory.DamageReceived(...)` fires for all important player damage sources in live runs.
+- Need to verify that `CombatHistory.DamageReceived(...)` fires for all important player damage sources in live runs beyond the now-confirmed poison/doom support.
 - Need a verified source for per-player display name in multiplayer.
 - Need confirmation of the minimal safe packaging/install shape for a code-only overlay mod.
 - Need stronger confidence that current sync/rescue logic will not re-break timeline/progression state.

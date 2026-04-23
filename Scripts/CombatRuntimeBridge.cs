@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -7,10 +8,13 @@ namespace Sts2DpsPrototype;
 internal sealed class CombatRuntimeBridge
 {
     private CombatManager? _combatManager;
+    private RunManager? _runManager;
     private IReadOnlyList<DpsTracker.PlayerSeed> _currentRoster = Array.Empty<DpsTracker.PlayerSeed>();
 
     internal void Update()
     {
+        SyncRunManager();
+
         var manager = CombatManager.Instance;
         if (manager == null)
             return;
@@ -20,6 +24,7 @@ internal sealed class CombatRuntimeBridge
             UnsubscribeManager();
             _combatManager = manager;
             _combatManager.CombatSetUp += OnCombatSetUp;
+            _combatManager.CombatWon += OnCombatWon;
             _combatManager.CombatEnded += OnCombatEnded;
             _combatManager.TurnStarted += OnTurnStarted;
         }
@@ -30,6 +35,7 @@ internal sealed class CombatRuntimeBridge
     internal void Dispose()
     {
         UnsubscribeManager();
+        UnsubscribeRunManager();
     }
 
     internal void ResetTrackedCombat()
@@ -46,9 +52,30 @@ internal sealed class CombatRuntimeBridge
             return;
 
         _combatManager.CombatSetUp -= OnCombatSetUp;
+        _combatManager.CombatWon -= OnCombatWon;
         _combatManager.CombatEnded -= OnCombatEnded;
         _combatManager.TurnStarted -= OnTurnStarted;
         _combatManager = null;
+    }
+
+    private void SyncRunManager()
+    {
+        var manager = RunManager.Instance;
+        if (manager == null || ReferenceEquals(_runManager, manager))
+            return;
+
+        UnsubscribeRunManager();
+        _runManager = manager;
+        _runManager.RunStarted += OnRunStarted;
+    }
+
+    private void UnsubscribeRunManager()
+    {
+        if (_runManager == null)
+            return;
+
+        _runManager.RunStarted -= OnRunStarted;
+        _runManager = null;
     }
 
     private void SyncCurrentCombat(CombatManager manager)
@@ -73,6 +100,27 @@ internal sealed class CombatRuntimeBridge
         _currentRoster = BuildCombatRoster(state);
         DpsTracker.BeginCombat(_currentRoster);
         DpsTracker.SetRoundNumber(state.RoundNumber);
+    }
+
+    private void OnRunStarted(RunState state)
+    {
+        _currentRoster = Array.Empty<DpsTracker.PlayerSeed>();
+        DpsTracker.ResetForNewRun();
+        MainFile.Log.Info($"[RUN_STARTED] Resetting run-total damage tracking for a new run. act={state.CurrentActIndex} floor={state.TotalFloor} roomCount={state.CurrentRoomCount}");
+    }
+
+    private void OnCombatWon(MegaCrit.Sts2.Core.Rooms.CombatRoom room)
+    {
+        CombatState? state = _combatManager?.DebugOnlyGetState();
+        if (state == null)
+        {
+            MainFile.Log.Info("[COMBAT_WON] state=<null>");
+            return;
+        }
+
+        string enemySummary = string.Join(", ", state.Enemies.Select(DescribeEnemyState));
+        MainFile.Log.Info($"[COMBAT_WON] round={state.RoundNumber} enemies={state.Enemies.Count} summary={enemySummary}");
+        DamageHookPatches.TryApplyPendingVictoryFallback(state);
     }
 
     private void OnCombatEnded(MegaCrit.Sts2.Core.Rooms.CombatRoom room)
@@ -130,6 +178,12 @@ internal sealed class CombatRuntimeBridge
             return characterName;
 
         return $"Player {fallbackIndex + 1}";
+    }
+
+    private static string DescribeEnemyState(Creature enemy)
+    {
+        string name = enemy.Name ?? enemy.GetType().Name;
+        return $"{name}(hp={enemy.CurrentHp}, block={enemy.Block}, dead={enemy.IsDead}, alive={enemy.IsAlive})";
     }
 
 }

@@ -45,6 +45,7 @@
 - Do not use the earlier `AbstractModel` combat-hook experiment as the active path for this prototype.
 - Use runtime subscription via `CombatManager.CombatSetUp` and `CombatManager.CombatEnded` for combat boundaries.
 - Read real damage by Harmony-patching `CombatHistory.DamageReceived(...)` against the real local `sts2.dll` signature.
+- Keep `CombatHistory.DamageReceived(...)` as the stable normal-damage mainline. Do not replace it with broad HP-loss or generic lethal fallback paths just to cover poison/doom edge cases.
 - Use `player.NetId` as the grouping key, seed the full roster at combat start, and attribute pet damage to `PetOwner` to avoid inflated player counts.
 - Format multiplayer display names with stable slot prefixes until a better official player-facing name source is confirmed.
 - Keep end-of-combat results visible, and clear them automatically only when the next combat starts.
@@ -52,3 +53,6 @@
 - Treat save/progression features as high-risk and prefer file-level verification plus backups over unchecked runtime save writes.
 - If the overlay disappears, prove the render chain first with an exaggerated diagnostic panel before debugging subtle layout issues.
 - During live debugging, always distinguish between repo changes and what has actually been deployed to the installed game.
+- Poison was stabilized by an additive combat-local design: `PoisonPower.AfterSideTurnStart(...)` observation, poison-source cache per target, first-tick cache seeding from poison-card history hits, and cached-owner recovery for null-dealer poison history entries.
+- Doom support must stay isolated on `DoomPower.DoomKill(...)` fallback attribution. Its applier lookup must be defensive, and when the live doom power instance does not expose an applier, fallback attribution may use recent doom-source cache or the current single-player combat owner.
+- After successful bug fixes or completed features, write a short maintenance summary into repo memo docs so later debugging can reuse the real fix instead of rediscovering it.

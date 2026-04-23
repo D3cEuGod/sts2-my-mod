@@ -3,7 +3,7 @@
   "name": "StS2 DPS Prototype",
   "author": "Jason + Claw",
   "description": "Prototype overlay for per-player DPT in Slay the Spire 2. Includes a compact draggable top-right panel, demo hotkeys, and an optional ModConfig bridge for panel tuning.",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "has_pck": false,
   "has_dll": true,
   "dependencies": [],

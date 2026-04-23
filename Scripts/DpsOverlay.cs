@@ -33,7 +33,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private readonly HashSet<int> _expandedCombatCards = new();
     private Vector2 _dragPointerOffset;
     private float _panelWidth = 338f;
-    private float _expandedPanelHeight = 320f;
+    private float _expandedPanelHeight = 438f;
     private float _collapsedPanelHeight = 46f;
     private int _lastAppliedMaxRows = -1;
 
@@ -305,26 +305,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             return;
 
         _lastAppliedMaxRows = PrototypeSettings.MaxRows;
-        AdjustPanelHeightToContent();
-    }
-
-    private void AdjustPanelHeightToContent()
-    {
-        if (_collapsed)
-        {
-            _expandedPanelHeight = Math.Max(_expandedPanelHeight, _collapsedPanelHeight);
-            ApplyCollapsedState();
-            SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
-            return;
-        }
-
-        float contentHeight = _showCombatHistory
-            ? _historyView.GetCombinedMinimumSize().Y
-            : _mainSections.GetCombinedMinimumSize().Y;
-
-        Rect2 visibleRect = GetViewport().GetVisibleRect();
-        float targetHeight = Mathf.Clamp(contentHeight + 74f, 150f, Math.Max(150f, visibleRect.Size.Y - 24f));
-        _expandedPanelHeight = targetHeight;
+        _expandedPanelHeight = 390f + Math.Max(0, PrototypeSettings.MaxRows - 3) * 24f;
         ApplyCollapsedState();
         SetPanelTopLeft(new Vector2(_panel.OffsetLeft, _panel.OffsetTop));
     }
@@ -710,7 +691,6 @@ internal sealed partial class DpsOverlay : CanvasLayer
         RebuildRows(_lifetimeRows, DpsTracker.GetLifetimeSnapshots(compactRows), showDps: false, emptyText: "还没有累计伤害。", showRecentHit: false, accent: RowAccent.Secondary, compact: true);
         RebuildRows(_lastCombatRows, DpsTracker.GetLastCombatSnapshots(compactRows), showDps: false, emptyText: "还没有上一场结算。", showRecentHit: false, accent: RowAccent.Muted, compact: true);
         RefreshHistoryView();
-        AdjustPanelHeightToContent();
     }
 
     private static void RebuildRows(VBoxContainer container, IReadOnlyList<DpsTracker.PlayerSnapshot> snapshots, bool showDps, string emptyText, bool showRecentHit, RowAccent accent, bool compact)

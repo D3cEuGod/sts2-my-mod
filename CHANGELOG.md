@@ -153,7 +153,7 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Highlighted the top-damage champion for each historical combat card so standout runs are easier to scan at a glance.
 - Brought the current-combat panel into the same visual language with champion highlighting plus highest-single-hit detail.
 - Increased overall panel sizing and font sizing slightly for readability in the live UI.
-- Removed the large empty lower area from the main panel by making expanded panel height follow visible content instead of staying at a mostly fixed size.
+- Replaced the earlier content-driven expanded-height experiment with a fixed main-panel height tuned for the three primary sections, after live testing showed the fully dynamic height could grow too large.
 
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.

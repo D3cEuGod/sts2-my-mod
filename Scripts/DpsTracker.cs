@@ -78,6 +78,7 @@ internal static class DpsTracker
 
         state.DisplayName = string.IsNullOrWhiteSpace(playerName) ? state.DisplayName : playerName;
         state.TotalDamage += damage;
+        state.HighestSingleHit = Math.Max(state.HighestSingleHit, damage);
     }
 
     internal static IReadOnlyList<PlayerSnapshot> GetSnapshots(int maxRows)
@@ -168,6 +169,7 @@ internal static class DpsTracker
                 state.DisplayName,
                 state.TotalDamage,
                 0f,
+                0f,
                 state.SortOrder))
             .OrderByDescending(snapshot => snapshot.TotalDamage)
             .ThenBy(snapshot => snapshot.SortOrder)
@@ -245,6 +247,7 @@ internal static class DpsTracker
                 state.DisplayName,
                 state.TotalDamage,
                 state.TotalDamage / roundCount,
+                state.HighestSingleHit,
                 state.SortOrder))
             .OrderByDescending(snapshot => snapshot.TotalDamage)
             .ThenBy(snapshot => snapshot.SortOrder)
@@ -334,6 +337,7 @@ internal static class DpsTracker
         internal string PlayerId { get; }
         internal string DisplayName { get; set; }
         internal float TotalDamage { get; set; }
+        internal float HighestSingleHit { get; set; }
         internal int SortOrder { get; }
     }
 
@@ -361,6 +365,7 @@ internal static class DpsTracker
         string DisplayName,
         float TotalDamage,
         float DamagePerTurn,
+        float HighestSingleHit,
         int SortOrder);
 
     internal sealed record CombatRecord(
@@ -370,5 +375,6 @@ internal static class DpsTracker
     {
         internal float TotalDamage => Snapshots.Sum(snapshot => snapshot.TotalDamage);
         internal int ActiveDealers => Snapshots.Count(snapshot => snapshot.TotalDamage > 0f);
+        internal float HighestSingleHit => Snapshots.Count == 0 ? 0f : Snapshots.Max(snapshot => snapshot.HighestSingleHit);
     }
 }

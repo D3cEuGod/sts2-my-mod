@@ -148,6 +148,8 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Tightened lifetime / last-combat rows and summaries so they show real damage dealers only, avoiding misleading zero-damage roster entries in those views.
 - Added per-run combat history retention in the tracker so the UI can browse older completed fights instead of only keeping one previous-combat snapshot.
 - Turned the last-combat header into a clickable entry point that opens a dedicated in-panel combat-history view for earlier fights in the current run.
+- Added per-player and per-combat highest-single-hit tracking so the history view can show stronger summary stats without touching the stable damage-capture mainline.
+- Upgraded the history view with expandable combat cards, better scrollable presentation, and simple paging for longer runs.
 
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.

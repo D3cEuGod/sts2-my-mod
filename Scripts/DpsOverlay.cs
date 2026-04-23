@@ -11,10 +11,12 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private VBoxContainer _lifetimeRows = null!;
     private VBoxContainer _lastCombatRows = null!;
     private VBoxContainer _historyRows = null!;
+    private HBoxContainer _historyPagerRow = null!;
     private Label _summaryLabel = null!;
     private Label _lifetimeLabel = null!;
     private Label _lastCombatLabel = null!;
     private Label _historySummaryLabel = null!;
+    private Label _historyPageLabel = null!;
     private Label _footerLabel = null!;
     private Button _historyOpenButton = null!;
     private PanelContainer _panel = null!;
@@ -24,6 +26,9 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private bool _collapsed;
     private bool _showCombatHistory;
     private bool _dragging;
+    private int _historyPageIndex;
+    private const int HistoryPageSize = 4;
+    private readonly HashSet<int> _expandedCombatCards = new();
     private Vector2 _dragPointerOffset;
     private float _panelWidth = 300f;
     private float _expandedPanelHeight = 276f;
@@ -399,14 +404,46 @@ internal sealed partial class DpsOverlay : CanvasLayer
         _historySummaryLabel = BuildSectionLabel();
         view.AddChild(_historySummaryLabel);
 
+        _historyPagerRow = Passthrough(new HBoxContainer());
+        _historyPagerRow.AddThemeConstantOverride("separation", 6);
+        view.AddChild(_historyPagerRow);
+
+        var prevButton = new Button
+        {
+            Text = "‹ 上一页",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+        };
+        prevButton.AddThemeFontSizeOverride("font_size", 10);
+        prevButton.Pressed += PrevHistoryPage;
+        _historyPagerRow.AddChild(prevButton);
+
+        _historyPageLabel = Passthrough(new Label { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Center });
+        _historyPageLabel.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
+        _historyPageLabel.AddThemeFontSizeOverride("font_size", 10);
+        _historyPagerRow.AddChild(_historyPageLabel);
+
+        var nextButton = new Button
+        {
+            Text = "下一页 ›",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+        };
+        nextButton.AddThemeFontSizeOverride("font_size", 10);
+        nextButton.Pressed += NextHistoryPage;
+        _historyPagerRow.AddChild(nextButton);
+
         var scroll = new ScrollContainer();
         scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        scroll.CustomMinimumSize = new Vector2(0f, 190f);
+        scroll.CustomMinimumSize = new Vector2(0f, 220f);
+        scroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         scroll.MouseFilter = Control.MouseFilterEnum.Pass;
         view.AddChild(scroll);
 
         _historyRows = new VBoxContainer();
-        _historyRows.AddThemeConstantOverride("separation", 5);
+        _historyRows.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _historyRows.AddThemeConstantOverride("separation", 6);
         _historyRows.MouseFilter = Control.MouseFilterEnum.Ignore;
         scroll.AddChild(_historyRows);
 
@@ -416,6 +453,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
     private void OpenCombatHistory()
     {
         _showCombatHistory = true;
+        _historyPageIndex = 0;
         Refresh();
     }
 
@@ -425,31 +463,107 @@ internal sealed partial class DpsOverlay : CanvasLayer
         Refresh();
     }
 
+    private void PrevHistoryPage()
+    {
+        if (_historyPageIndex <= 0)
+            return;
+
+        _historyPageIndex--;
+        RefreshHistoryView();
+    }
+
+    private void NextHistoryPage()
+    {
+        int pageCount = GetHistoryPageCount();
+        if (_historyPageIndex >= pageCount - 1)
+            return;
+
+        _historyPageIndex++;
+        RefreshHistoryView();
+    }
+
+    private int GetHistoryPageCount()
+    {
+        int total = DpsTracker.GetHistoricalCombatRecords().Count;
+        return Math.Max(1, (int)Math.Ceiling(total / (double)HistoryPageSize));
+    }
+
     private void RefreshHistoryView()
     {
+        var allRecords = DpsTracker.GetHistoricalCombatRecords();
+        int pageCount = Math.Max(1, (int)Math.Ceiling(allRecords.Count / (double)HistoryPageSize));
+        _historyPageIndex = Math.Clamp(_historyPageIndex, 0, pageCount - 1);
+
         _historySummaryLabel.Text = DpsTracker.GetCombatHistorySummary();
+        _historyPagerRow.Visible = allRecords.Count > 0;
+        _historyPageLabel.Text = allRecords.Count == 0 ? string.Empty : $"第 {_historyPageIndex + 1}/{pageCount} 页";
 
         foreach (Node child in _historyRows.GetChildren())
             child.QueueFree();
 
-        var records = DpsTracker.GetHistoricalCombatRecords();
-        if (records.Count == 0)
+        if (allRecords.Count == 0)
         {
             _historyRows.AddChild(BuildEmptyLabel("还没有可查看的更早战斗记录。"));
             return;
         }
 
-        foreach (var record in records)
-            _historyRows.AddChild(BuildHistoryRecord(record));
+        var pageRecords = allRecords
+            .Skip(_historyPageIndex * HistoryPageSize)
+            .Take(HistoryPageSize)
+            .ToArray();
+
+        foreach (var record in pageRecords)
+            _historyRows.AddChild(BuildHistoryRecord(record, _expandedCombatCards.Contains(record.CombatIndex)));
     }
 
-    private static Control BuildHistoryRecord(DpsTracker.CombatRecord record)
+    private Control BuildHistoryRecord(DpsTracker.CombatRecord record, bool expanded)
     {
-        var card = Passthrough(new VBoxContainer());
-        card.AddThemeConstantOverride("separation", 2);
+        var card = new VBoxContainer();
+        card.AddThemeConstantOverride("separation", 3);
+        card.MouseFilter = Control.MouseFilterEnum.Pass;
 
-        var header = Passthrough(new HBoxContainer());
+        var panel = new PanelContainer();
+        panel.MouseFilter = Control.MouseFilterEnum.Pass;
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color(1f, 1f, 1f, 0.025f),
+            BorderColor = new Color(1f, 1f, 1f, 0.06f),
+            BorderWidthLeft = 1,
+            BorderWidthTop = 1,
+            BorderWidthRight = 1,
+            BorderWidthBottom = 1,
+            CornerRadiusTopLeft = 4,
+            CornerRadiusTopRight = 4,
+            CornerRadiusBottomLeft = 4,
+            CornerRadiusBottomRight = 4,
+            ContentMarginLeft = 7,
+            ContentMarginRight = 7,
+            ContentMarginTop = 6,
+            ContentMarginBottom = 6,
+        });
+        card.AddChild(panel);
+
+        var body = new VBoxContainer();
+        body.AddThemeConstantOverride("separation", 3);
+        body.MouseFilter = Control.MouseFilterEnum.Ignore;
+        panel.AddChild(body);
+
+        var header = new HBoxContainer();
         header.AddThemeConstantOverride("separation", 4);
+        header.MouseFilter = Control.MouseFilterEnum.Pass;
+        body.AddChild(header);
+
+        var expandButton = new Button
+        {
+            Text = expanded ? "▾" : "▸",
+            FocusMode = Control.FocusModeEnum.None,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+            CustomMinimumSize = new Vector2(20f, 20f),
+            TooltipText = expanded ? "收起本场详情" : "展开查看更多玩家",
+        };
+        expandButton.AddThemeFontSizeOverride("font_size", 10);
+        expandButton.Pressed += () => ToggleCombatRecordExpanded(record.CombatIndex);
+        header.AddChild(expandButton);
 
         var title = Passthrough(new Label
         {
@@ -468,31 +582,51 @@ internal sealed partial class DpsOverlay : CanvasLayer
         total.AddThemeFontSizeOverride("font_size", 12);
         header.AddChild(total);
 
-        card.AddChild(header);
-
         var summary = Passthrough(new Label
         {
-            Text = $"{record.RoundCount} 回合 · 出伤 {record.ActiveDealers} 人",
+            Text = $"{record.RoundCount} 回合 · 出伤 {record.ActiveDealers} 人 · 最高单次 {record.HighestSingleHit:F0}",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         summary.AddThemeColorOverride("font_color", new Color(0.58f, 0.58f, 0.55f));
         summary.AddThemeFontSizeOverride("font_size", 10);
-        card.AddChild(summary);
+        body.AddChild(summary);
 
-        foreach (var snapshot in record.Snapshots.Where(snapshot => snapshot.TotalDamage > 0f).Take(3))
+        int visiblePlayers = expanded ? Math.Max(3, PrototypeSettings.MaxRows + 1) : 3;
+        var snapshots = record.Snapshots.Where(snapshot => snapshot.TotalDamage > 0f).Take(visiblePlayers).ToArray();
+        foreach (var snapshot in snapshots)
         {
             var row = Passthrough(new Label
             {
-                Text = $"• {snapshot.DisplayName}  {snapshot.TotalDamage:F0}  /  {snapshot.DamagePerTurn:F1} DPT",
+                Text = $"• {snapshot.DisplayName}  {snapshot.TotalDamage:F0}  /  {snapshot.DamagePerTurn:F1} DPT  /  最高 {snapshot.HighestSingleHit:F0}",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
             row.AddThemeColorOverride("font_color", new Color(0.69f, 0.74f, 0.8f));
             row.AddThemeFontSizeOverride("font_size", 10);
-            card.AddChild(row);
+            body.AddChild(row);
         }
 
-        card.AddChild(BuildDivider());
+        int hiddenPlayers = record.Snapshots.Count(snapshot => snapshot.TotalDamage > 0f) - snapshots.Length;
+        if (!expanded && hiddenPlayers > 0)
+        {
+            var moreLabel = Passthrough(new Label
+            {
+                Text = $"还有 {hiddenPlayers} 位玩家，点击展开查看",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            });
+            moreLabel.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
+            moreLabel.AddThemeFontSizeOverride("font_size", 10);
+            body.AddChild(moreLabel);
+        }
+
         return card;
+    }
+
+    private void ToggleCombatRecordExpanded(int combatIndex)
+    {
+        if (!_expandedCombatCards.Add(combatIndex))
+            _expandedCombatCards.Remove(combatIndex);
+
+        RefreshHistoryView();
     }
 
     private void Refresh()
@@ -591,7 +725,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
 
         if (!compact)
         {
-            string detailText = $"总伤害 {snapshot.TotalDamage:F0}";
+            string detailText = $"总伤害 {snapshot.TotalDamage:F0} · 最高单次 {snapshot.HighestSingleHit:F0}";
             var detail = Passthrough(new Label
             {
                 Text = detailText,

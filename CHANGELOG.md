@@ -154,6 +154,7 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Brought the current-combat panel into the same visual language with champion highlighting plus highest-single-hit detail.
 - Increased overall panel sizing and font sizing slightly for readability in the live UI.
 - Replaced the earlier broad content-driven expanded-height experiment with a narrower rows-driven main-panel height rule, so the main HUD follows actual rendered rows instead of either growing from all content or reserving too much fixed empty space.
+- Added stable tinted background cards to player rows in the main HUD so each player's data is easier to distinguish at a glance.
 
 ### Release prep for 1.1.2
 - Rolled in the recent overlay/UI fixes and combat-history improvements into version `1.1.2`.
@@ -161,6 +162,12 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Tightened main-panel height behavior so the main HUD sizes from rows actually rendered, avoiding both giant dynamic-height growth and large fixed empty space.
 - Preserved the combat-history enhancements from this pass: champion highlighting, highest single hit display, expandable fight cards, and paged history browsing.
 - Updated repo version fields to `1.1.2` and prepared a new DLL-only release package.
+
+### Release prep for 1.1.3
+- Rolled in the latest UI polish after `1.1.2`, including the final rows-driven height tightening.
+- Recorded the HUD empty-space debugging lesson in `AGENTS.md` so future work checks the panel-height formula before blaming layout containers.
+- Added deterministic tinted background cards to player rows and then warmed the palette slightly toward gold while increasing player-to-player distinction.
+- Updated repo version fields to `1.1.3` and prepared a new DLL-only release package.
 
 ## Conventions for future entries
 - Append new dated sections, do not rewrite old entries unless correcting facts.

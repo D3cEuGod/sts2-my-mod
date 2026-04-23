@@ -757,15 +757,41 @@ internal sealed partial class DpsOverlay : CanvasLayer
 
     private static Control BuildRow(int rank, DpsTracker.PlayerSnapshot snapshot, bool showDps, bool showRecentHit, RowAccent accent, bool compact)
     {
+        var shell = Passthrough(new VBoxContainer());
+        shell.AddThemeConstantOverride("separation", 0);
+
+        Color rowTint = GetPlayerRowTint(snapshot.PlayerId);
+
+        var panel = Passthrough(new PanelContainer());
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color(rowTint.R, rowTint.G, rowTint.B, compact ? 0.18f : 0.22f),
+            BorderColor = new Color(rowTint.R, rowTint.G, rowTint.B, compact ? 0.35f : 0.42f),
+            BorderWidthLeft = 1,
+            BorderWidthTop = 1,
+            BorderWidthRight = 1,
+            BorderWidthBottom = 1,
+            ContentMarginLeft = 8,
+            ContentMarginRight = 8,
+            ContentMarginTop = compact ? 5 : 6,
+            ContentMarginBottom = compact ? 5 : 6,
+            CornerRadiusTopLeft = 4,
+            CornerRadiusTopRight = 4,
+            CornerRadiusBottomLeft = 4,
+            CornerRadiusBottomRight = 4,
+        });
+        shell.AddChild(panel);
+
         var box = Passthrough(new VBoxContainer());
-        box.AddThemeConstantOverride("separation", compact ? 0 : 1);
+        box.AddThemeConstantOverride("separation", compact ? 1 : 2);
+        panel.AddChild(box);
 
         var header = Passthrough(new HBoxContainer());
         header.AddThemeConstantOverride("separation", 4);
 
         var rankLabel = Passthrough(new Label { Text = rank == 1 && showDps ? "#1 👑" : $"#{rank}" });
         rankLabel.CustomMinimumSize = new Vector2(34f, 0f);
-        rankLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.65f, 0.38f));
+        rankLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.83f, 0.56f));
         rankLabel.AddThemeFontSizeOverride("font_size", 13);
         header.AddChild(rankLabel);
 
@@ -774,7 +800,7 @@ internal sealed partial class DpsOverlay : CanvasLayer
             Text = snapshot.DisplayName,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         });
-        nameLabel.AddThemeColorOverride("font_color", new Color(0.87f, 0.86f, 0.82f));
+        nameLabel.AddThemeColorOverride("font_color", new Color(0.94f, 0.93f, 0.9f));
         nameLabel.AddThemeFontSizeOverride("font_size", 14);
         header.AddChild(nameLabel);
 
@@ -784,9 +810,9 @@ internal sealed partial class DpsOverlay : CanvasLayer
         var rightLabel = Passthrough(new Label { Text = rightText });
         rightLabel.AddThemeColorOverride("font_color", accent switch
         {
-            RowAccent.Primary => new Color(0.78f, 0.84f, 0.62f),
-            RowAccent.Secondary => new Color(0.66f, 0.73f, 0.8f),
-            _ => new Color(0.53f, 0.58f, 0.62f),
+            RowAccent.Primary => new Color(0.88f, 0.93f, 0.72f),
+            RowAccent.Secondary => new Color(0.78f, 0.84f, 0.92f),
+            _ => new Color(0.72f, 0.77f, 0.82f),
         });
         rightLabel.AddThemeFontSizeOverride("font_size", 13);
         header.AddChild(rightLabel);
@@ -801,12 +827,29 @@ internal sealed partial class DpsOverlay : CanvasLayer
                 Text = detailText,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             });
-            detail.AddThemeColorOverride("font_color", new Color(0.47f, 0.49f, 0.5f));
+            detail.AddThemeColorOverride("font_color", new Color(0.76f, 0.79f, 0.83f));
             detail.AddThemeFontSizeOverride("font_size", 11);
             box.AddChild(detail);
         }
 
-        return box;
+        return shell;
+    }
+
+    private static Color GetPlayerRowTint(string playerId)
+    {
+        int hash = playerId.Aggregate(17, (current, ch) => unchecked(current * 31 + ch));
+        float baseHue = Mathf.PosMod(hash % 360, 360) / 360f;
+
+        // Pull every player tint a little toward a warm gold family while keeping
+        // enough hue spread that different players still read as distinct.
+        const float goldHue = 0.12f;
+        float hue = Mathf.LerpAngle(baseHue * Mathf.Tau, goldHue * Mathf.Tau, 0.18f) / Mathf.Tau;
+        if (hue < 0f)
+            hue += 1f;
+
+        float saturation = 0.44f + Mathf.PosMod((hash / 7) % 100, 100) / 100f * 0.18f;
+        float value = 0.56f + Mathf.PosMod((hash / 13) % 100, 100) / 100f * 0.12f;
+        return Color.FromHsv(hue, saturation, value);
     }
 
     private enum RowAccent

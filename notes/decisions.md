@@ -54,6 +54,7 @@
 - If the overlay disappears, prove the render chain first with an exaggerated diagnostic panel before debugging subtle layout issues.
 - During live debugging, always distinguish between repo changes and what has actually been deployed to the installed game.
 - Keep UI polish additive and isolated from the stable damage-capture path. Small panel/layout improvements should not require touching the main Harmony damage hooks.
+- Keep overlay localization isolated to a text/localization layer plus settings plumbing. Language switching should not add extra always-visible HUD chrome or disturb the stable combat/UI render path.
 - ModConfig-backed overlay settings should always round-trip through `PrototypeSettings.Load()` correctly; if a setting is exposed in ModConfig, do not silently hardcode over it at load time.
 - Lifetime and last-combat summary views should prefer real damage-dealer rows only; seeded zero-damage roster entries are acceptable in the live combat view but misleading in summary panels.
 - Keep per-run combat-history browsing in tracker/UI state only. Earlier completed fights can be retained for viewing, but this should stay separate from the stable live-combat damage mainline.

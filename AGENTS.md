@@ -53,6 +53,7 @@ Whenever you change build steps, packaging steps, loader assumptions, entrypoint
 - update notes/decisions.md
 - update notes/known-issues.md if something is uncertain
 - update CHANGELOG.md with a short dated summary
+- every time you cut a release, re-check and update README.md so the published version, package name, and install notes match the shipped release exactly
 
 ## Validation
 Before claiming work is done:
@@ -125,6 +126,12 @@ This is the repo-level memo that should be checked on every future update to thi
 ### Maintenance rule for successful fixes/features
 - When a bug is successfully fixed, or a feature is successfully completed, add a short repo memo describing what actually fixed it and what paths must not be disturbed.
 - Prefer writing that maintenance knowledge here in `AGENTS.md`, plus `CHANGELOG.md` and `notes/decisions.md` when the change affects repo behavior or future debugging decisions.
+
+### Overlay language toggle / clean UI memo
+- Keep overlay language switching isolated to text/localization helpers plus settings plumbing.
+- Prefer ModConfig for language selection instead of adding another always-visible in-panel toggle.
+- Do not clutter the combat HUD just to expose language switching; the panel should stay compact and gameplay-first.
+- If localization expands later, preserve the existing stable combat hooks and panel layout. Text changes should not require touching the damage pipeline.
 
 ### UI sizing / empty-space memo
 - For the main HUD, large empty lower space was not caused by mysterious Godot layout behavior; it came from our own panel-height formula being too generous.

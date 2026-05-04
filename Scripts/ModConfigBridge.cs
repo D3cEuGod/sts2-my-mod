@@ -167,6 +167,16 @@ internal static class ModConfigBridge
             }),
             Entry(config =>
             {
+                Set(config, "Key", "overlayLanguage");
+                Set(config, "Label", "Overlay language");
+                Set(config, "Labels", L("Overlay language", "面板语言"));
+                Set(config, "Type", EnumVal("Dropdown"));
+                Set(config, "DefaultValue", "Auto");
+                Set(config, "Options", new[] { "Auto", "English", "简体中文" });
+                Set(config, "OnChanged", new Action<object>(value => PrototypeSettings.SetOverlayLanguage(Convert.ToString(value))));
+            }),
+            Entry(config =>
+            {
                 Set(config, "Key", "enableDemoHotkeys");
                 Set(config, "Label", "Enable demo hotkeys");
                 Set(config, "Labels", L("Enable demo hotkeys", "启用演示热键"));

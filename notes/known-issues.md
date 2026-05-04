@@ -27,6 +27,7 @@
 - The overlay is now visible and working again, but visual polish is still iterative rather than finalized.
 - The current UI has been tuned by live trial in the real game rather than by any official STS2 UI guidance.
 - Current compact/HUD tradeoffs are aesthetic judgments, not validated modding standards.
+- The new overlay language toggle is designed to stay out of the HUD itself; the primary supported switch path is ModConfig, and Auto-language behavior still depends on live verification of the game's effective Godot locale.
 - If future layout regressions happen, the safest debug path is still to switch briefly to an exaggerated diagnostic panel.
 
 ## packaging / deployment limitations

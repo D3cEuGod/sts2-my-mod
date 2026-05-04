@@ -95,21 +95,19 @@ internal static class DpsTracker
         {
             var liveSnapshots = BuildLiveSnapshots(int.MaxValue);
             if (liveSnapshots.Count == 0)
-                return "战斗进行中，暂时还没有有效伤害。";
+                return OverlayText.EncounterInProgressNoDamage();
 
             float liveTotalDamage = liveSnapshots.Sum(player => player.TotalDamage);
             int activeDealers = liveSnapshots.Count(player => player.TotalDamage > 0f);
-            return $"战斗进行中 · 第 {GetEffectiveRoundCount()} 回合 · 出伤 {activeDealers}/{liveSnapshots.Count} 人 · 总伤害 {liveTotalDamage:F0}";
+            return OverlayText.EncounterInProgress(GetEffectiveRoundCount(), activeDealers, liveSnapshots.Count, liveTotalDamage);
         }
 
         if (!_publishedCombatSeen)
-            return _combatSeen
-                ? "本场已结束，但还没有可展示的结算数据。"
-                : "还没有已结算战斗，开打后会自动开始统计。";
+            return OverlayText.EncounterFinishedNoData(_combatSeen);
 
         float totalDamage = _publishedCombatSnapshots.Sum(player => player.TotalDamage);
         int finishedDealers = _publishedCombatSnapshots.Count(player => player.TotalDamage > 0f);
-        return $"本场结算 · {_publishedCombatRoundCount} 回合 · 出伤 {finishedDealers}/{_publishedCombatSnapshots.Count} 人 · 总伤害 {totalDamage:F0}";
+        return OverlayText.EncounterFinished(_publishedCombatRoundCount, finishedDealers, _publishedCombatSnapshots.Count, totalDamage);
     }
 
     internal static string GetLifetimeSummary()
@@ -119,20 +117,20 @@ internal static class DpsTracker
             totalDamage += Players.Values.Sum(player => player.TotalDamage);
 
         if (totalDamage <= 0f)
-            return "当前这一局还没有累计到有效伤害。";
+            return OverlayText.LifetimeNoDamage();
 
-        return $"当前这一局累计总伤害 {totalDamage:F0}";
+        return OverlayText.LifetimeTotal(totalDamage);
     }
 
     internal static string GetLastCombatSummary()
     {
         var snapshots = GetVisibleLastCombatSnapshots();
         if (snapshots.Count == 0)
-            return "还没有上一场可展示的结算。";
+            return OverlayText.LastCombatNoSummary();
 
         float totalDamage = snapshots.Sum(snapshot => snapshot.TotalDamage);
         int activeDealers = snapshots.Count(snapshot => snapshot.TotalDamage > 0f);
-        return $"上一场总伤害 {totalDamage:F0} · 出伤 {activeDealers} 人";
+        return OverlayText.LastCombatSummary(totalDamage, activeDealers);
     }
 
     internal static IReadOnlyList<PlayerSnapshot> GetLifetimeSnapshots(int maxRows)
@@ -189,9 +187,9 @@ internal static class DpsTracker
     {
         int recordCount = GetHistoricalCombatRecords().Count;
         if (recordCount == 0)
-            return "还没有更早的战斗记录。";
+            return OverlayText.CombatHistoryNoRecords();
 
-        return $"本局已保留 {recordCount} 场更早战斗记录";
+        return OverlayText.CombatHistorySummary(recordCount);
     }
 
     internal static IReadOnlyList<CombatRecord> GetHistoricalCombatRecords()

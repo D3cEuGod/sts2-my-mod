@@ -25,8 +25,74 @@ The mod tracks current combat damage, lifetime damage, and previous combat summa
 
 ## Screenshots
 
-![Overlay Overview](docs/images/Screenshot%202026-05-04%20at%2003.42.51.png)
-![Compact Panel](docs/images/Screenshot%202026-05-04%20at%2003.45.08.png)
+The gallery below mixes full-context gameplay shots with tighter crops of the HUD so the in-game footprint, readability, and information hierarchy are easy to evaluate at a glance.
+
+<table>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2003.42.51.png" alt="Full in-combat overlay context" width="92%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Full in-combat context. The top-right overlay shows current combat, run total, and last-combat summary while keeping the center play area unobstructed.<br />
+        <strong>中文：</strong> 完整战斗场景中的右上角面板，同时展示当前战斗、本局累计和上一场结算，并尽量不遮挡主战场。
+      </sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2003.45.08.png" alt="Readable low-obstruction HUD placement" width="100%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Readable HUD footprint. The panel sits beside cards, enemies, and combat VFX rather than over the middle of the screen.<br />
+        <strong>中文：</strong> 展示面板在卡牌、敌人和战斗特效旁边的低遮挡摆放方式，而不是压在屏幕中央。
+      </sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2004.37.22.png" alt="Localized overlay state with preserved layout" width="100%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Localized overlay state. The same compact layout stays clean after language switching, keeping spacing and visual hierarchy stable across English and Chinese text.<br />
+        <strong>中文：</strong> 展示切换语言后的同一套紧凑布局，中英文切换后仍保持稳定的间距和层级。
+      </sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2003.45.27.png" alt="Player row detail close-up" width="64%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Row-level detail close-up. Each player row surfaces rank, name, DPT, total damage, and best hit in a compact card-style block.<br />
+        <strong>中文：</strong> 行级特写，单个玩家行会在紧凑卡片块里展示排名、名称、DPT、总伤害和最高单次。
+      </sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2003.45.33.png" alt="Section hierarchy close-up" width="64%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Section hierarchy close-up. The panel separates live combat data from run-level and previous-combat summaries so performance trends are scannable at a glance.<br />
+        <strong>中文：</strong> 分区层级特写，把当前战斗、本局累计和上一场结算拆开显示，方便一眼扫读。
+      </sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2004.37.30.png" alt="Localized summary text in compact HUD" width="100%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Localized summary view. Longer translated labels and summary lines still fit cleanly without widening the HUD or introducing extra controls.<br />
+        <strong>中文：</strong> 本地化摘要视图。即使标签和摘要文字更长，也不需要把 HUD 做得更宽或加入额外控件。
+      </sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/Screenshot%202026-05-04%20at%2004.37.44.png" alt="Consistent overlay presentation across encounters" width="100%" />
+      <br />
+      <sub>
+        <strong>EN:</strong> Consistent live-combat presentation. Another fight capture showing the overlay preserving readability and the same information hierarchy against a different board state.<br />
+        <strong>中文：</strong> 另一张实战截图，说明在不同战斗场景下，面板仍保持同样的信息层级和可读性。
+      </sub>
+    </td>
+  </tr>
+</table>
 
 ## Chinese Notes / 中文说明
 

@@ -8,6 +8,7 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 - Added a clean overlay language toggle through ModConfig (`Auto` / `English` / `简体中文`) without adding new always-visible HUD controls.
 - Isolated overlay localization into dedicated settings/text helper paths so the stable damage hooks and tracker pipeline stayed untouched.
 - Updated README, install docs, repo notes, and AGENTS guidance for the new language-switch feature and the `1.2.1` DLL-only release.
+- Expanded the README screenshot gallery with more `docs/images/` captures, mixed image sizing, and bilingual English/Chinese captions for each image.
 - Prepared repo version fields for `1.2.1` and rebuilt/redeployed the live DLL to the actual macOS runtime-scanned mod directory.
 
 ### README refresh

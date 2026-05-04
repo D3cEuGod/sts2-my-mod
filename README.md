@@ -33,11 +33,11 @@ The mod tracks current combat damage, lifetime damage, and previous combat summa
 
 ## Latest 安装说明
 
-当前最新发布版本：`1.1.1`
+当前最新发布版本：`1.1.3`
 
 如果你只是想安装最新版本，不需要自己构建源码，直接：
 
-1. 在 GitHub Releases 下载最新的 `Sts2DpsPrototype-1.1.1-multiplatform-dll-only.zip`
+1. 在 GitHub Releases 下载最新的 `Sts2DpsPrototype-1.1.3-multiplatform-dll-only.zip`
 2. 解压后把整个 `Sts2DpsPrototype/` 文件夹复制到游戏的 `mods/` 目录
 3. 启动游戏，进入战斗后确认右上角出现面板
 
@@ -69,9 +69,9 @@ mods/
 - 避免存档/进度修复逻辑再次破坏 modded 存档
 - 把右上角面板继续收成紧凑、可读、接近原生 UI 的样式
 
-## 1.1.1 发布说明
+## 1.1.3 发布说明
 
-当前准备发布的 `1.1.1` 版本采用 **DLL-only 跨平台包**：
+当前准备发布的 `1.1.3` 版本采用 **DLL-only 跨平台包**：
 
 - 保留 `Sts2DpsPrototype.dll`
 - 保留 `Sts2DpsPrototype.json`
@@ -85,7 +85,7 @@ mods/
 
 所以当前的“Windows 和 macOS 都能正常运行”的推荐发布方式，是同一份 DLL-only 包，而不是依赖 `.pck` 的完整资源包。
 
-补充两点和 `1.1.1` 直接相关的发布修复：
+补充两点和 `1.1.3` 直接相关的发布修复：
 
 - 初始化时现在会调用 `ModConfigBridge.DeferredRegister()`，这样安装了 ModConfig 时设置页才能按示例模板正常注册
 - 本机构建后的 DLL 现在会复制到实际运行时扫描的 `SlayTheSpire2.app/Contents/MacOS/mods/` 目录，而不是旧的外层 `mods/` 路径
@@ -207,7 +207,7 @@ dotnet build Sts2DpsPrototype.csproj
 当前推荐打包命令：
 
 ```bash
-STS2_VERSION=1.1.1 bash tools/package_release.sh
+STS2_VERSION=1.1.3 bash tools/package_release.sh
 ```
 
 它会：
@@ -216,7 +216,7 @@ STS2_VERSION=1.1.1 bash tools/package_release.sh
 2. 强制发布配置为 `has_pck=false` / `has_dll=true`
 3. 编译 `Sts2DpsPrototype.dll`
 4. 生成 DLL-only 发布目录
-5. 产出 zip：`dist/Sts2DpsPrototype-1.1.1-multiplatform-dll-only.zip`
+5. 产出 zip：`dist/Sts2DpsPrototype-1.1.3-multiplatform-dll-only.zip`
 
 ## 文档约定
 

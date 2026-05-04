@@ -74,24 +74,6 @@ The gallery below mixes full-context gameplay shots with tighter crops of the HU
       </sub>
     </td>
   </tr>
-  <tr>
-    <td width="50%" align="center">
-      <img src="docs/images/Screenshot%202026-05-04%20at%2004.37.30.png" alt="Localized summary text in compact HUD" width="100%" />
-      <br />
-      <sub>
-        <strong>EN:</strong> Localized summary view. Longer translated labels and summary lines still fit cleanly without widening the HUD or introducing extra controls.<br />
-        <strong>中文：</strong> 本地化摘要视图。即使标签和摘要文字更长，也不需要把 HUD 做得更宽或加入额外控件。
-      </sub>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/images/Screenshot%202026-05-04%20at%2004.37.44.png" alt="Consistent overlay presentation across encounters" width="100%" />
-      <br />
-      <sub>
-        <strong>EN:</strong> Consistent live-combat presentation. Another fight capture showing the overlay preserving readability and the same information hierarchy against a different board state.<br />
-        <strong>中文：</strong> 另一张实战截图，说明在不同战斗场景下，面板仍保持同样的信息层级和可读性。
-      </sub>
-    </td>
-  </tr>
 </table>
 
 ## Chinese Notes / 中文说明

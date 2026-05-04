@@ -22,6 +22,13 @@ The mod tracks current combat damage, lifetime damage, and previous combat summa
 - Harmony patching
 - Slay the Spire 2 modding
 
+## Screenshots
+
+![Overlay Overview](docs/images/Screenshot%202026-05-04%20at%2003.42.51.png)
+![Compact Panel](docs/images/Screenshot%202026-05-04%20at%2003.45.08.png)
+![Expanded Summary](docs/images/Screenshot%202026-05-04%20at%2003.45.27.png)
+![Runtime Example](docs/images/Screenshot%202026-05-04%20at%2003.45.33.png)
+
 ## Chinese Notes / 中文说明
 
 一个面向 Slay the Spire 2 的 DPT 原型模组仓库。

@@ -7,6 +7,7 @@ This file tracks human-readable repo changes so live-debug work stays traceable.
 ### README refresh
 - Added an English project summary to the top of `README.md`.
 - Inserted a `## Chinese Notes / 中文说明` divider before the existing Chinese documentation.
+- Added a screenshot gallery above the Chinese notes using images from `docs/images/`.
 
 ## 2026-04-21
 

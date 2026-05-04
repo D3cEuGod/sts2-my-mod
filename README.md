@@ -1,5 +1,29 @@
 # sts2-my-mod
 
+A C# mod for Slay the Spire 2 that adds a compact draggable in-game DPT panel.
+
+The mod tracks current combat damage, lifetime damage, and previous combat summaries by hooking into combat damage events and maintaining runtime combat statistics.
+
+## Key Features
+
+- Draggable in-game DPT overlay
+- Current combat damage tracking
+- Lifetime damage tracking
+- Previous combat summary
+- Runtime hooks using Harmony patches
+- DLL-only release package for easier installation
+- Local debug hotkeys for testing overlay and damage events
+
+## Tech Stack
+
+- C#
+- .NET
+- Godot Mono
+- Harmony patching
+- Slay the Spire 2 modding
+
+## Chinese Notes / 中文说明
+
 一个面向 Slay the Spire 2 的 DPT 原型模组仓库。
 
 ## Latest 安装说明

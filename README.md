@@ -26,8 +26,6 @@ The mod tracks current combat damage, lifetime damage, and previous combat summa
 
 ![Overlay Overview](docs/images/Screenshot%202026-05-04%20at%2003.42.51.png)
 ![Compact Panel](docs/images/Screenshot%202026-05-04%20at%2003.45.08.png)
-![Expanded Summary](docs/images/Screenshot%202026-05-04%20at%2003.45.27.png)
-![Runtime Example](docs/images/Screenshot%202026-05-04%20at%2003.45.33.png)
 
 ## Chinese Notes / 中文说明
 
